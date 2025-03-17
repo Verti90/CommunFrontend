@@ -10,9 +10,15 @@ const apiClient = axios.create({
 
 // Attach Authorization header to every request
 apiClient.interceptors.request.use(async (config) => {
-    const token = await AsyncStorage.getItem("token");
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+    try {
+        const token = await AsyncStorage.getItem("token");
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            console.warn('No token found in AsyncStorage');
+        }
+    } catch (error) {
+        console.error('Error retrieving token from AsyncStorage:', error);
     }
     return config;
 }, error => {
@@ -42,3 +48,5 @@ export const unregisterActivity = async (activityId: number) => {
     const response = await apiClient.post(`activities/${activityId}/unregister/`);
     return response.data;
 };
+
+export default apiClient;

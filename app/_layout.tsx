@@ -1,7 +1,7 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
-import { useAuth } from "../app/AuthContext";  // Ensure this works
+import { AuthProvider } from '../AuthContext';
 import { ActivityIndicator, View } from "react-native";
 import IndexScreen from "../app/index";
 import ProfileScreen from "../app/profile";
@@ -12,6 +12,7 @@ import MaintenanceScreen from "../app/Maintenance";
 import TransportationScreen from "../app/Transportation";
 import WellnessScreen from "../app/Wellness";
 import LoginScreen from "../app/screens/LoginScreen";
+import RootLayoutNav from './RootLayoutNav';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();

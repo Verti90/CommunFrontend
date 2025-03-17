@@ -55,3 +55,10 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
+
+// Ensure a React component is exported as default
+const DefaultComponent = () => {
+  return <div>Auth Context</div>;
+};
+
+export default DefaultComponent;

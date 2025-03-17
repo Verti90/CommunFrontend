@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
         const storedUser = await AsyncStorage.getItem("user");
         const storedToken = await AsyncStorage.getItem("token");
         if (storedUser && storedToken) {
+          console.log("Retrieved token:", storedToken); // Log the retrieved token
           setUser(JSON.parse(storedUser));
           setToken(storedToken);
         }
@@ -31,6 +32,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       await AsyncStorage.setItem("token", authToken);
+      console.log("Saved token:", authToken); // Log the saved token
       setUser(userData);
       setToken(authToken);
     } catch (error) {

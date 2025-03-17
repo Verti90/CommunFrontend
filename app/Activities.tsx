@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { getActivities } from '../services/api';
+import apiClient from '../services/api';
 
 interface Activity {
   id: number;
@@ -15,10 +15,15 @@ export default function Activities() {
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const response = await getActivities();
-        setActivities(response);
+        const response = await apiClient.get('activities/');
+        console.log("Request headers:", response.config.headers); // Log request headers
+        setActivities(response.data);
       } catch (error) {
         console.error('Error fetching activities:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data); // Log response data
+          console.error('Response status:', error.response.status); // Log response status
+        }
       }
     };
 
@@ -48,7 +53,7 @@ export default function Activities() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F3E7',
+    backgroundColor: '#F3F3E7', // similar neutral background from screenshot
     padding: 10,
   },
   card: {

@@ -1,10 +1,22 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const apiClient = axios.create({
-    baseURL: 'http://192.168.4.91:8000/api/', // Replace with your actual backend URL
+    baseURL: 'http://192.168.4.91:8000/api/',
     headers: {
         'Content-Type': 'application/json',
     },
+});
+
+// Attach Authorization header to every request
+apiClient.interceptors.request.use(async (config) => {
+    const token = await AsyncStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+}, error => {
+    return Promise.reject(error);
 });
 
 // Authentication methods
@@ -30,5 +42,3 @@ export const unregisterActivity = async (activityId: number) => {
     const response = await apiClient.post(`activities/${activityId}/unregister/`);
     return response.data;
 };
-
-export default apiClient;

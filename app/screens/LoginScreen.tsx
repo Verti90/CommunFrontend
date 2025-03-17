@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useAuth } from "../AuthContext"; // Ensure correct import
+import { useAuth } from "../../AuthContext"; // Adjusted the import path
 
 export default function LoginScreen() {
   const { login } = useAuth();

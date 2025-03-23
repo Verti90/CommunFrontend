@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { AuthProvider } from './app/AuthContext';
+import { AuthProvider } from './AuthContext';
 import LoginScreen from './app/LoginScreen';
 import HomeScreen from './app/HomeScreen';
 // Import other screens as needed

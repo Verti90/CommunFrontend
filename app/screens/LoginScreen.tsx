@@ -15,10 +15,18 @@ export default function LoginScreen() {
       const response = await axios.post('http://192.168.4.91:8000/api/token/', { username, password });
       const { refresh, access } = response.data;
       await login({ username }, access);
+
+      // Debug log to check navigation state
+      console.log("Navigating to Home");
       navigation.replace("Home"); // Ensure this matches the defined route name
     } catch (error) {
       console.error("Login error", error);
       // Handle login error (e.g., show an error message)
+      if (error.response && error.response.status === 401) {
+        alert("Invalid username or password");
+      } else {
+        alert("An unexpected error occurred. Please try again later.");
+      }
     }
   };
 

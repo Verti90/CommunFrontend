@@ -36,6 +36,8 @@ export const AuthProvider = ({ children }) => {
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
       await AsyncStorage.setItem('@Auth:token', token);
 
+      // Debug log to check navigation state
+      console.log("Navigating to Home after login");
       navigation.reset({
         index: 0,
         routes: [{ name: 'Home' }],

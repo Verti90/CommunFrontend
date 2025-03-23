@@ -22,9 +22,10 @@ export default function Activities() {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log("Request headers:", response.config.headers); // Log request headers
+        console.log("Fetch activities response:", response.data);
         setActivities(response.data);
       } catch (error) {
+        console.error('Error fetching activities:', error);
         if (error.response && error.response.status === 401) {
           // Handle token expiration or invalid token
           Alert.alert(
@@ -40,11 +41,8 @@ export default function Activities() {
             ]
           );
         } else {
-          console.error('Error fetching activities:', error);
-          if (error.response) {
-            console.error('Response data:', error.response.data); // Log response data
-            console.error('Response status:', error.response.status); // Log response status
-          }
+          console.error('Response data:', error.response?.data); // Log response data
+          console.error('Response status:', error.response?.status); // Log response status
         }
       }
     };

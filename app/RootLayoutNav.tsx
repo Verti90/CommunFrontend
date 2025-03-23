@@ -16,11 +16,21 @@ import LoginScreen from "../app/screens/LoginScreen";
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Stack Navigator for other screens
+const OtherScreensNavigator = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Activities" component={ActivitiesScreen} />
+    <Stack.Screen name="Admin" component={AdminScreen} />
+    <Stack.Screen name="Dining" component={DiningScreen} />
+    <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
+    <Stack.Screen name="Transportation" component={TransportationScreen} />
+    <Stack.Screen name="Wellness" component={WellnessScreen} />
+  </Stack.Navigator>
+);
+
 // Bottom Tab Navigator (Always Visible at the Bottom)
-const MainNavigator = () => (
-  <Tab.Navigator
-    screenOptions={{ headerShown: false }}
-  >
+const MainTabNavigator = () => (
+  <Tab.Navigator screenOptions={{ headerShown: false }}>
     <Tab.Screen 
       name="Home" 
       component={IndexScreen} 
@@ -29,6 +39,13 @@ const MainNavigator = () => (
           <Image source={require('../assets/images/Home.png')} style={{ width: size, height: size, tintColor: color }} />
         ),
       }}  
+    />
+    <Tab.Screen 
+      name="More" 
+      component={OtherScreensNavigator} 
+      options={{
+        tabBarButton: () => null, // Hide the tab button
+      }}
     />
     <Tab.Screen 
       name="Profile" 
@@ -57,15 +74,7 @@ const RootLayoutNav = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {user ? (
-        <>
-          <Stack.Screen name="Main" component={MainNavigator} />
-          <Stack.Screen name="Activities" component={ActivitiesScreen} />
-          <Stack.Screen name="Admin" component={AdminScreen} />
-          <Stack.Screen name="Dining" component={DiningScreen} />
-          <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
-          <Stack.Screen name="Transportation" component={TransportationScreen} />
-          <Stack.Screen name="Wellness" component={WellnessScreen} />
-        </>
+        <Stack.Screen name="Main" component={MainTabNavigator} />
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />
       )}

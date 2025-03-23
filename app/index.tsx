@@ -23,7 +23,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             key={icon.name}
             style={styles.iconButton}
-            onPress={() => navigation.navigate(icon.name)}
+            onPress={() => navigation.navigate('More', { screen: icon.name })}
           >
             <Image source={icon.source} style={styles.iconImage} />
             <Text>{icon.name}</Text>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TextInput, Button, StyleSheet, SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useAuth } from "../../AuthContext"; // Adjusted the import path
+import axios from 'axios';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -10,9 +11,14 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
 
   const handleLogin = async () => {
-    const success = await login(username, password);
-    if (success) {
+    try {
+      const response = await axios.post('http://192.168.4.91:8000/api/token/', { username, password });
+      const { refresh, access } = response.data;
+      await login({ username }, access);
       navigation.replace("index"); // Redirect after login
+    } catch (error) {
+      console.error("Login error", error);
+      // Handle login error (e.g., show an error message)
     }
   };
 

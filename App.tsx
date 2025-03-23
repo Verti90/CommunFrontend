@@ -1,5 +1,5 @@
 import React from 'react';
-import { AuthProvider } from './AuthContext'; // Adjusted the import path
+import { AuthProvider } from './AuthContext';
 import RootLayoutNav from './app/RootLayoutNav';
 
 const App = () => {

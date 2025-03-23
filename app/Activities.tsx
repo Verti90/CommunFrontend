@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 import apiClient from '../services/api';
+import { useAuth } from '../AuthContext';
 
 interface Activity {
   id: number;
@@ -11,11 +12,16 @@ interface Activity {
 
 export default function Activities() {
   const [activities, setActivities] = useState<Activity[]>([]);
+  const { token } = useAuth();
 
   useEffect(() => {
     const fetchActivities = async () => {
       try {
-        const response = await apiClient.get('activities/');
+        const response = await apiClient.get('activities/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         console.log("Request headers:", response.config.headers); // Log request headers
         setActivities(response.data);
       } catch (error) {
@@ -28,7 +34,7 @@ export default function Activities() {
     };
 
     fetchActivities();
-  }, []);
+  }, [token]);
 
   const renderItem = ({ item }: { item: Activity }) => (
     <TouchableOpacity style={styles.card}>

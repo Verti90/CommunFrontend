@@ -1,12 +1,20 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect, ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const AuthContext = createContext(null);
+interface AuthContextType {
+  user: any;
+  token: string | null;
+  isLoading: boolean;
+  login: (userData: any, authToken: string) => Promise<void>;
+  logout: () => Promise<void>;
+}
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -28,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     loadUser();
   }, []);
 
-  const login = async (userData, authToken) => {
+  const login = async (userData: any, authToken: string) => {
     try {
       await AsyncStorage.setItem("user", JSON.stringify(userData));
       await AsyncStorage.setItem("token", authToken);
@@ -54,13 +62,10 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };
-
-// Ensure a React component is exported as default
-const DefaultComponent = () => {
-  return <div>Auth Context</div>;
-};
-
-export default DefaultComponent;

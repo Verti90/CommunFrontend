@@ -10,7 +10,7 @@ const LoginScreen = ({ navigation }) => {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://your-backend-url/api/login/', { username, password });
+      const response = await axios.post('http://192.168.4.91:8000/api/token/', { username, password });
       const { access, refresh } = response.data;
       setUser({ access, refresh });
       navigation.replace('Home');

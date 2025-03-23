@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = await AsyncStorage.getItem('@Auth:token');
 
       if (storedUser && storedToken) {
+        console.log("Loaded user from storage:", storedUser);
         setUser(JSON.parse(storedUser));
         setToken(storedToken);
       }
@@ -27,7 +28,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (username, password) => {
     try {
+      console.log("Attempting backend login with username:", username);
       const response = await apiClient.post('/login/', { username, password });
+      console.log("Backend login response:", response.data);
       const { user, token } = response.data;
 
       setUser(user);
@@ -43,6 +46,7 @@ export const AuthProvider = ({ children }) => {
         routes: [{ name: 'Home' }],
       });
     } catch (error) {
+      console.error('Login error', error);
       Alert.alert('Login Error', 'Invalid username or password');
     }
   };

@@ -6,15 +6,13 @@ import { useAuth } from '../../AuthContext';
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { setUser } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post('http://192.168.4.91:8000/api/token/', { username, password });
-      const { access, refresh } = response.data;
-      setUser({ access, refresh });
-      navigation.replace('Home');
+      await login(username, password);
     } catch (error) {
+      console.error("Login error:", error); // Add this line for debugging
       if (error.response && error.response.status === 401) {
         Alert.alert('Login Error', 'Invalid credentials');
       } else {

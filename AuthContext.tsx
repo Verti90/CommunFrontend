@@ -34,12 +34,11 @@ export const AuthProvider = ({ children }) => {
       const { user, token } = response.data;
 
       setUser(user);
-      setToken(token);
+      setToken(token.access);
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
-      await AsyncStorage.setItem('@Auth:token', token);
+      await AsyncStorage.setItem('@Auth:token', token.access);
 
-      // Debug log to check navigation state
       console.log("Navigating to Home after login");
       navigation.reset({
         index: 0,
@@ -65,7 +64,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );

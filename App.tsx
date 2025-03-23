@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider } from './AuthContext';
 import LoginScreen from './app/screens/LoginScreen';
-import IndexScreen from './app/index'; // Ensure this is correctly imported
+import IndexScreen from './app/index';
 
 const Stack = createStackNavigator();
 
@@ -13,8 +13,7 @@ export default function App() {
       <NavigationContainer>
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Home" component={IndexScreen} /> {/* Ensure this route is defined */}
-          {/* Add other screens here */}
+          <Stack.Screen name="Home" component={IndexScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>

@@ -12,7 +12,7 @@ interface Activity {
 
 export default function Activities() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -29,12 +29,18 @@ export default function Activities() {
         if (error.response) {
           console.error('Response data:', error.response.data); // Log response data
           console.error('Response status:', error.response.status); // Log response status
+
+          // Handle token expiration or invalid token
+          if (error.response.status === 401) {
+            console.error('Token is invalid or expired, logging out...');
+            logout();
+          }
         }
       }
     };
 
     fetchActivities();
-  }, [token]);
+  }, [token, logout]);
 
   const renderItem = ({ item }: { item: Activity }) => (
     <TouchableOpacity style={styles.card}>

@@ -24,26 +24,25 @@ export default function Dining() {
         });
         setMeals(response.data);
       } catch (error) {
-        console.error('Error fetching meals:', error);
-        if (error.response) {
-          console.error('Response data:', error.response.data); // Log response data
-          console.error('Response status:', error.response.status); // Log response status
-
+        if (error.response && error.response.status === 401) {
           // Handle token expiration or invalid token
-          if (error.response.status === 401) {
-            console.error('Token is invalid or expired, logging out...');
-            Alert.alert(
-              "Session Expired",
-              "Your session has expired, please log back in.",
-              [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    logout();
-                  }
+          Alert.alert(
+            "Session Expired",
+            "Your session has expired, please log back in.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  logout();
                 }
-              ]
-            );
+              }
+            ]
+          );
+        } else {
+          console.error('Error fetching meals:', error);
+          if (error.response) {
+            console.error('Response data:', error.response.data); // Log response data
+            console.error('Response status:', error.response.status); // Log response status
           }
         }
       }

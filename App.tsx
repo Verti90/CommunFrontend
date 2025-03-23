@@ -1,13 +1,23 @@
 import React from 'react';
-import { AuthProvider } from './AuthContext';
-import RootLayoutNav from './app/RootLayoutNav';
+import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { AuthProvider } from './app/AuthContext';
+import LoginScreen from './app/LoginScreen';
+import HomeScreen from './app/HomeScreen';
+// Import other screens as needed
 
-const App = () => {
+const Stack = createStackNavigator();
+
+export default function App() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <NavigationContainer>
+        <Stack.Navigator initialRouteName="Login">
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          {/* Add other screens here */}
+        </Stack.Navigator>
+      </NavigationContainer>
     </AuthProvider>
   );
-};
-
-export default App;
+}

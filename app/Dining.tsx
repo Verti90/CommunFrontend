@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import apiClient from '../services/api';
+import { useAuth } from '../AuthContext';
 
 interface Meal {
   id: number;
@@ -11,19 +12,45 @@ interface Meal {
 
 export default function Dining() {
   const [meals, setMeals] = useState<Meal[]>([]);
+  const { token, logout } = useAuth();
 
   useEffect(() => {
     const fetchMeals = async () => {
       try {
-        const response = await apiClient.get('meals/');
+        const response = await apiClient.get('meals/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
         setMeals(response.data);
       } catch (error) {
         console.error('Error fetching meals:', error);
+        if (error.response) {
+          console.error('Response data:', error.response.data); // Log response data
+          console.error('Response status:', error.response.status); // Log response status
+
+          // Handle token expiration or invalid token
+          if (error.response.status === 401) {
+            console.error('Token is invalid or expired, logging out...');
+            Alert.alert(
+              "Session Expired",
+              "Your session has expired, please log back in.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    logout();
+                  }
+                }
+              ]
+            );
+          }
+        }
       }
     };
 
     fetchMeals();
-  }, []);
+  }, [token, logout]);
 
   return (
     <ScrollView style={styles.container}>

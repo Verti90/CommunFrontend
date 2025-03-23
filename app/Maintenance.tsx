@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import axios from 'axios';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useAuth } from '../AuthContext';
 
 const API_BASE_URL = 'http://192.168.4.91:8000/api'; // Make this easily configurable later
 
@@ -12,6 +13,8 @@ const MaintenanceScreen = () => {
     const [requestType, setRequestType] = useState(null);
     const [description, setDescription] = useState('');
     const [openDropdown, setOpenDropdown] = useState(false);
+    const { token, logout } = useAuth();
+
     const requestTypes = [
         { label: 'Maintenance', value: 'Maintenance', icon: () => <MaterialIcons name="build" size={20} color="black" /> },
         { label: 'Housekeeping', value: 'Housekeeping', icon: () => <MaterialIcons name="home" size={20} color="black" /> }
@@ -19,14 +22,39 @@ const MaintenanceScreen = () => {
 
     useEffect(() => {
         fetchRequests();
-    }, []);
+    }, [token, logout]);
 
     const fetchRequests = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/maintenance/`);
+            const response = await axios.get(`${API_BASE_URL}/maintenance/`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             setRequests(response.data);
         } catch (error) {
             console.error('Error fetching maintenance requests:', error);
+            if (error.response) {
+                console.error('Response data:', error.response.data); // Log response data
+                console.error('Response status:', error.response.status); // Log response status
+
+                // Handle token expiration or invalid token
+                if (error.response.status === 401) {
+                    console.error('Token is invalid or expired, logging out...');
+                    Alert.alert(
+                        "Session Expired",
+                        "Your session has expired, please log back in.",
+                        [
+                            {
+                                text: "OK",
+                                onPress: () => {
+                                    logout();
+                                }
+                            }
+                        ]
+                    );
+                }
+            }
         }
     };
 
@@ -35,7 +63,7 @@ const MaintenanceScreen = () => {
             alert('Please fill in all fields!');
             return;
         }
-        
+
         const newRequest = {
             resident_name: residentName,
             request_type: requestType,
@@ -44,13 +72,38 @@ const MaintenanceScreen = () => {
         };
 
         try {
-            await axios.post(`${API_BASE_URL}/maintenance/`, newRequest);
+            await axios.post(`${API_BASE_URL}/maintenance/`, newRequest, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
             fetchRequests(); // Refresh the list
             setResidentName('');
             setRequestType(null);
             setDescription('');
         } catch (error) {
             console.error('Error submitting request:', error);
+            if (error.response) {
+                console.error('Response data:', error.response.data); // Log response data
+                console.error('Response status:', error.response.status); // Log response status
+
+                // Handle token expiration or invalid token
+                if (error.response.status === 401) {
+                    console.error('Token is invalid or expired, logging out...');
+                    Alert.alert(
+                        "Session Expired",
+                        "Your session has expired, please log back in.",
+                        [
+                            {
+                                text: "OK",
+                                onPress: () => {
+                                    logout();
+                                }
+                            }
+                        ]
+                    );
+                }
+            }
         }
     };
 
@@ -77,7 +130,7 @@ const MaintenanceScreen = () => {
                     </View>
                 )}
             />
-            
+
             <Text style={styles.formHeader}>Submit a New Request</Text>
             <TextInput
                 style={styles.input}

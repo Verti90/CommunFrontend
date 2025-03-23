@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useContext } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import apiClient from '../services/api';
 import { useAuth } from '../AuthContext';
 
@@ -33,7 +33,18 @@ export default function Activities() {
           // Handle token expiration or invalid token
           if (error.response.status === 401) {
             console.error('Token is invalid or expired, logging out...');
-            logout();
+            Alert.alert(
+              "Session Expired",
+              "Your session has expired, please log back in.",
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    logout();
+                  }
+                }
+              ]
+            );
           }
         }
       }

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, Alert } from 'react-native';
-import axios from 'axios';
+import { View, Text, TextInput, Button, Alert, StyleSheet } from 'react-native';
 import { useAuth } from '../../AuthContext';
 
 const LoginScreen = ({ navigation }) => {
@@ -12,7 +11,7 @@ const LoginScreen = ({ navigation }) => {
     try {
       await login(username, password);
     } catch (error) {
-      console.error("Login error:", error); // Add this line for debugging
+      console.error('Login error:', error);
       if (error.response && error.response.status === 401) {
         Alert.alert('Login Error', 'Invalid credentials');
       } else {
@@ -22,15 +21,48 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View>
-      <Text>Username</Text>
-      <TextInput value={username} onChangeText={setUsername} />
-      <Text>Password</Text>
-      <TextInput value={password} onChangeText={setPassword} secureTextEntry />
+    <View style={styles.container}>
+      <Text style={styles.label}>Username</Text>
+      <TextInput
+        style={styles.input}
+        value={username}
+        onChangeText={setUsername}
+        autoCapitalize="none"
+        autoCorrect={false}
+      />
+      <Text style={styles.label}>Password</Text>
+      <TextInput
+        style={styles.input}
+        value={password}
+        onChangeText={setPassword}
+        secureTextEntry
+      />
       <Button title="Login" onPress={handleLogin} />
-      <Button title="Register" onPress={() => navigation.navigate('RegisterScreen')} />
+      <Button
+        title="Register"
+        onPress={() => navigation.navigate('Register')}
+      />
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 20,
+    justifyContent: 'center',
+  },
+  label: {
+    marginBottom: 5,
+    fontSize: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    marginBottom: 15,
+    padding: 10,
+    borderRadius: 5,
+  },
+});
 
 export default LoginScreen;

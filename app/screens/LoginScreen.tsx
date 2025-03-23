@@ -15,7 +15,7 @@ export default function LoginScreen() {
       const response = await axios.post('http://192.168.4.91:8000/api/token/', { username, password });
       const { refresh, access } = response.data;
       await login({ username }, access);
-      navigation.replace("Home"); // Redirect after login
+      navigation.replace("Home"); // Ensure this matches the defined route name
     } catch (error) {
       console.error("Login error", error);
       // Handle login error (e.g., show an error message)

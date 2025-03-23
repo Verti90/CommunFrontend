@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { AuthProvider } from './AuthContext';
 import LoginScreen from './app/screens/LoginScreen';
 import IndexScreen from './app/index';
+import RegisterScreen from './app/screens/RegisterScreen'; // Import RegisterScreen
 
 const Stack = createStackNavigator();
 
@@ -14,6 +15,7 @@ export default function App() {
         <Stack.Navigator initialRouteName="Login">
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Home" component={IndexScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} /> {/* Add RegisterScreen */}
         </Stack.Navigator>
       </NavigationContainer>
     </AuthProvider>

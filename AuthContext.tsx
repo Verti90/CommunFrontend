@@ -1,75 +1,96 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
-import apiClient from './services/api';
-import { useNavigation } from '@react-navigation/native';
+import { router } from 'expo-router'; // ✅ Use router for navigation
+import api from './services/api';
 
-const AuthContext = createContext();
+type User = {
+  username: string;
+  email: string;
+  id?: number;
+};
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const navigation = useNavigation();
+type AuthContextType = {
+  user: User | null;
+  token: string | null;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  loading: boolean;
+};
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadStorageData = async () => {
-      const storedUser = await AsyncStorage.getItem('@Auth:user');
-      const storedToken = await AsyncStorage.getItem('@Auth:token');
+    const loadStoredData = async () => {
+      try {
+        const storedUser = await AsyncStorage.getItem('@Auth:user');
+        const storedToken = await AsyncStorage.getItem('@Auth:token');
 
-      if (storedUser && storedToken) {
-        console.log("Loaded user from storage:", storedUser);
-        setUser(JSON.parse(storedUser));
-        setToken(storedToken);
+        if (storedUser && storedToken) {
+          setUser(JSON.parse(storedUser));
+          setToken(storedToken);
+          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+          console.log('🔐 Loaded user from storage:', JSON.parse(storedUser));
+        }
+      } catch (error) {
+        console.error('Error loading auth data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadStorageData();
+    loadStoredData();
   }, []);
 
-  const login = async (username, password) => {
+  const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      console.log("Attempting backend login with username:", username);
-      const response = await apiClient.post('/login/', { username, password });
-      console.log("Backend login response:", response.data);
-      const { user, token } = response.data;
+      console.log('🔐 Attempting backend login with username:', username);
+      const response = await api.post('/login/', { username, password });
+      console.log('🔐 Backend login response:', response.data);
 
-      setUser(user);
+      const { token, user } = response.data;
+
       setToken(token.access);
+      setUser(user);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token.access}`;
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
       await AsyncStorage.setItem('@Auth:token', token.access);
 
-      console.log("Navigating to Home after login");
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Home' }],
-      });
+      console.log('✅ Navigating to Home after login');
+      router.replace('/'); // ✅ Go to home screen
+      return true;
     } catch (error) {
-      console.error('Login error', error);
-      Alert.alert('Login Error', 'Invalid username or password');
+      console.error('❌ Login failed:', error);
+      return false;
     }
   };
 
   const logout = async () => {
+    await AsyncStorage.removeItem('@Auth:user');
+    await AsyncStorage.removeItem('@Auth:token');
     setUser(null);
     setToken(null);
 
-    await AsyncStorage.removeItem('@Auth:user');
-    await AsyncStorage.removeItem('@Auth:token');
-
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Login' }],
-    });
+    console.log('🚪 Logged out, navigating to Login');
+    router.replace('/login'); // ✅ Go to login screen
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, setUser }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
+export const useAuth = (): AuthContextType => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };

@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import * as LocalAuthentication from 'expo-local-authentication';
 import { useAuth } from '../../AuthContext';
 
 const screenWidth = Dimensions.get('window').width;
@@ -20,28 +21,50 @@ const screenWidth = Dimensions.get('window').width;
 const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
   const { login } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    checkBiometricSupport();
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start();
-  }, [fadeAnim]);
+  }, []);
+
+  const checkBiometricSupport = async () => {
+    const compatible = await LocalAuthentication.hasHardwareAsync();
+    const enrolled = await LocalAuthentication.isEnrolledAsync();
+    setIsBiometricSupported(compatible && enrolled);
+  };
+
+  const handleBiometricLogin = async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Login with Face ID / Biometrics',
+    });
+
+    if (result.success) {
+      const lastUsername = 'jtenbroeck'; // Replace later with SecureStore
+      const lastPassword = 'your_password'; // Replace later with SecureStore
+      const success = await login(lastUsername, lastPassword);
+      if (success) {
+        navigation.navigate('Main');
+      } else {
+        Alert.alert('Login Failed', 'Stored credentials are incorrect.');
+      }
+    } else {
+      Alert.alert('Authentication Failed', 'Face ID cancelled or failed.');
+    }
+  };
 
   const handleLogin = async () => {
-    try {
-      await login(username, password);
+    const success = await login(username, password);
+    if (success) {
       navigation.navigate('Main');
-    } catch (error) {
-      console.error('Login error:', error);
-      if (error.response?.status === 401) {
-        Alert.alert('Login Error', 'Invalid credentials');
-      } else {
-        Alert.alert('Login Error', 'An error occurred during login');
-      }
+    } else {
+      Alert.alert('Login Failed', 'Invalid username or password.');
     }
   };
 
@@ -87,6 +110,15 @@ const LoginScreen = ({ navigation }) => {
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
               <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
+
+            {isBiometricSupported && (
+              <TouchableOpacity
+                style={styles.faceIdButton}
+                onPress={handleBiometricLogin}
+              >
+                <Text style={styles.buttonText}>Login with Face ID</Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={styles.registerButton}
@@ -157,6 +189,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     marginTop: 10,
+  },
+  faceIdButton: {
+    backgroundColor: '#6c5ce7',
+    paddingVertical: 14,
+    borderRadius: 8,
+    marginTop: 16,
   },
   registerButton: {
     backgroundColor: '#27ae60',

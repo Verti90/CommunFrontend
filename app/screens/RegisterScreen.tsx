@@ -13,17 +13,18 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import apiClient from '../../services/api';
 
 const screenWidth = Dimensions.get('window').width;
 
-const RegisterScreen = ({ navigation }) => {
+const RegisterScreen = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const router = useRouter();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -42,7 +43,7 @@ const RegisterScreen = ({ navigation }) => {
     try {
       await apiClient.post('/register/', { username, email, password });
       Alert.alert('Registration Successful', 'You can now log in');
-      navigation.navigate('Login');
+      router.replace('/screens/LoginScreen');
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response) {
@@ -123,7 +124,7 @@ const RegisterScreen = ({ navigation }) => {
 
             <TouchableOpacity
               style={styles.loginButton}
-              onPress={() => navigation.navigate('Login')}
+              onPress={() => router.replace('/screens/LoginScreen')}
             >
               <Text style={styles.loginText}>Already have an account? Login</Text>
             </TouchableOpacity>

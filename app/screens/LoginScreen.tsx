@@ -1,213 +1,204 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  Alert,
   StyleSheet,
-  Animated,
+  Alert,
   Image,
-  Dimensions,
-  ScrollView,
-  KeyboardAvoidingView,
+  useWindowDimensions,
   Platform,
 } from 'react-native';
-import * as LocalAuthentication from 'expo-local-authentication';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useAuth } from '../../AuthContext';
 
-const screenWidth = Dimensions.get('window').width;
+const LoginScreen = () => {
+  const { width } = useWindowDimensions();
+  const router = useRouter();
+  const { login } = useAuth();
 
-const LoginScreen = ({ navigation }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isBiometricSupported, setIsBiometricSupported] = useState(false);
-  const { login } = useAuth();
-  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    checkBiometricSupport();
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  const checkBiometricSupport = async () => {
-    const compatible = await LocalAuthentication.hasHardwareAsync();
-    const enrolled = await LocalAuthentication.isEnrolledAsync();
-    setIsBiometricSupported(compatible && enrolled);
-  };
-
-  const handleBiometricLogin = async () => {
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Login with Face ID / Biometrics',
-    });
-
-    if (result.success) {
-      const lastUsername = 'jtenbroeck'; // Replace later with SecureStore
-      const lastPassword = 'your_password'; // Replace later with SecureStore
-      const success = await login(lastUsername, lastPassword);
-      if (success) {
-        navigation.navigate('Main');
-      } else {
-        Alert.alert('Login Failed', 'Stored credentials are incorrect.');
+    const loadRememberedCredentials = async () => {
+      try {
+        const savedUsername = await AsyncStorage.getItem('rememberedUsername');
+        const savedPassword = await AsyncStorage.getItem('rememberedPassword');
+        if (savedUsername && savedPassword) {
+          setUsername(savedUsername);
+          setPassword(savedPassword);
+          setRememberMe(true);
+        }
+      } catch (error) {
+        console.error('Error loading remembered credentials:', error);
       }
-    } else {
-      Alert.alert('Authentication Failed', 'Face ID cancelled or failed.');
-    }
-  };
+    };
+
+    loadRememberedCredentials();
+  }, []);
 
   const handleLogin = async () => {
     const success = await login(username, password);
     if (success) {
-      navigation.navigate('Main');
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberedUsername', username);
+        await AsyncStorage.setItem('rememberedPassword', password);
+      } else {
+        await AsyncStorage.removeItem('rememberedUsername');
+        await AsyncStorage.removeItem('rememberedPassword');
+      }
     } else {
       Alert.alert('Login Failed', 'Invalid username or password.');
     }
   };
 
+  const handleRegister = () => {
+    router.push('/screens/RegisterScreen');
+  };
+
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={styles.container}>
-          <View style={styles.header}>
-            <Image
-              source={require('../../assets/images/commun-logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
-            <Text style={styles.headerText}>Welcome to Commun</Text>
-            <Text style={styles.tagline}>
-              WHERE COMMUNITY MEETS COMMUNICATION & CONVENIENCE
-            </Text>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Image
+          source={require('../../assets/images/commun-logo.png')}
+          style={[styles.logo, { width: width * 0.4, height: width * 0.4 }]}
+          resizeMode="contain"
+        />
+        <Text style={styles.title}>Welcome to Commun</Text>
+        <Text style={styles.subtitle}>
+          WHERE COMMUNITY MEETS COMMUNICATION & CONVENIENCE
+        </Text>
+      </View>
+
+      <View style={styles.form}>
+        <Text style={styles.label}>Username</Text>
+        <TextInput
+          placeholder="Enter username"
+          style={styles.input}
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+        />
+
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          placeholder="Enter password"
+          secureTextEntry
+          style={styles.input}
+          value={password}
+          onChangeText={setPassword}
+        />
+
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.registerButton]}
+          onPress={handleRegister}
+        >
+          <Text style={styles.buttonText}>Register</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.rememberMe}
+          onPress={() => setRememberMe(!rememberMe)}
+        >
+          <View style={styles.checkbox}>
+            {rememberMe && <Text style={styles.checkmark}>✓</Text>}
           </View>
-
-          <Animated.View style={[styles.form, { opacity: fadeAnim }]}>
-            <Text style={styles.label}>Username</Text>
-            <TextInput
-              style={styles.input}
-              value={username}
-              onChangeText={setUsername}
-              autoCapitalize="none"
-              autoCorrect={false}
-              placeholder="Enter username"
-            />
-
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              placeholder="Enter password"
-            />
-
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.buttonText}>Login</Text>
-            </TouchableOpacity>
-
-            {isBiometricSupported && (
-              <TouchableOpacity
-                style={styles.faceIdButton}
-                onPress={handleBiometricLogin}
-              >
-                <Text style={styles.buttonText}>Login with Face ID</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={styles.registerButton}
-              onPress={() => navigation.navigate('Register')}
-            >
-              <Text style={styles.buttonText}>Register</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <Text style={styles.rememberMeText}>Remember Me</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 };
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F3E7',
+    backgroundColor: '#f3f3e6',
   },
   header: {
     backgroundColor: '#586259',
-    paddingTop: 60,
-    paddingBottom: 30,
     alignItems: 'center',
+    paddingVertical: 40,
   },
   logo: {
-    width: screenWidth * 0.4,
-    height: screenWidth * 0.4,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  headerText: {
-    color: '#fff',
-    fontSize: 24,
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
-    textShadowColor: 'rgba(0, 0, 0, 0.25)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
+    color: 'white',
   },
-  tagline: {
-    color: '#fff',
-    fontSize: 12,
+  subtitle: {
+    fontSize: 11,
     fontStyle: 'italic',
+    color: 'white',
+    marginTop: 2,
     textAlign: 'center',
-    marginTop: 4,
-    marginHorizontal: 16,
-    letterSpacing: 0.5,
   },
   form: {
     flex: 1,
-    padding: 30,
-    justifyContent: 'center',
+    padding: 20,
+    paddingTop: 30,
   },
   label: {
-    marginBottom: 6,
-    fontSize: 16,
-    color: '#34495e',
+    marginBottom: 5,
+    color: '#333',
   },
   input: {
+    backgroundColor: 'white',
+    borderColor: '#ddd',
     borderWidth: 1,
-    borderColor: '#bdc3c7',
-    backgroundColor: '#ffffff',
-    marginBottom: 16,
-    padding: 12,
-    borderRadius: 8,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    marginBottom: 15,
   },
-  loginButton: {
-    backgroundColor: '#2980b9',
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 10,
-  },
-  faceIdButton: {
-    backgroundColor: '#6c5ce7',
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 16,
+  button: {
+    backgroundColor: '#2f80ed',
+    padding: 15,
+    borderRadius: 6,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   registerButton: {
     backgroundColor: '#27ae60',
-    paddingVertical: 14,
-    borderRadius: 8,
-    marginTop: 16,
   },
   buttonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: 'white',
     fontWeight: 'bold',
-    textAlign: 'center',
+  },
+  rememberMe: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderWidth: 1,
+    borderColor: '#555',
+    marginRight: 8,
+    borderRadius: 3,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    fontSize: 14,
+    color: '#27ae60',
+    fontWeight: 'bold',
+    lineHeight: 18,
+  },
+  rememberMeText: {
+    color: '#555',
   },
 });
-
-export default LoginScreen;

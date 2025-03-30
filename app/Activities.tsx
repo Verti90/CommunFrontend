@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { Calendar } from 'react-native-calendars';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import apiClient from '../services/api';
 import { useAuth } from '../AuthContext';
+import { addDays, addMonths, format, startOfWeek, endOfWeek } from 'date-fns';
 
 interface Activity {
   id: number;
@@ -13,134 +13,108 @@ interface Activity {
   participants: number[];
 }
 
-export default function Activities() {
+export default function WeeklyActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [currentDate, setCurrentDate] = useState(new Date());
   const { token, logout, user } = useAuth();
-  const [refreshToggle, setRefreshToggle] = useState(false);
 
   useEffect(() => {
-    fetchActivities(selectedDate);
-  }, [selectedDate, token]);
+    fetchActivities(currentDate);
+  }, [currentDate, token]);
 
-  const fetchActivities = async (date: string) => {
+const fetchActivities = async (date: Date) => {
+  const now = new Date();
+  const twoMonthsAhead = addMonths(now, 2);
+  
+  if (date > twoMonthsAhead) {
+    Alert.alert('Error', 'You can only view activities up to two months ahead.');
+    return;
+  }
+
+  const start = format(startOfWeek(date), 'yyyy-MM-dd');
+  const end = format(endOfWeek(date), 'yyyy-MM-dd');
+
     try {
-      const response = await apiClient.get(`activities/?start_date=${date}&end_date=${date}`, {
+      const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setActivities(response.data);
     } catch (error) {
-      handleApiError(error);
+      Alert.alert('Error', 'Could not fetch activities.');
     }
   };
 
-  const handleSignup = async (activityId: number) => {
-    try {
-      await apiClient.post(`/activities/${activityId}/signup/`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      Alert.alert('Success', 'You signed up for the activity!');
-      fetchActivities(selectedDate);
-      setRefreshToggle(prev => !prev);
-    } catch (error) {
-      handleApiError(error);
-    }
+  const changeWeek = (direction: number) => {
+    setCurrentDate(prevDate => addDays(prevDate, direction * 7));
   };
 
-  const handleUnregister = async (activityId: number) => {
-    try {
-      await apiClient.post(`/activities/${activityId}/unregister/`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      Alert.alert('Success', 'You have unregistered from the activity.');
-      fetchActivities(selectedDate);
-      setRefreshToggle(prev => !prev);
-    } catch (error) {
-      handleApiError(error);
-    }
-  };
+const handleSignup = async (activityId: number, occurrence_date: string) => {
+  try {
+    await apiClient.post(`/activities/${activityId}/signup/`, { occurrence_date }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    Alert.alert('Success', 'You signed up for the activity!');
+    fetchActivities(currentDate);
+  } catch (error) {
+    Alert.alert('Error', 'Unable to sign up.');
+  }
+};
 
-  const handleApiError = (error) => {
-    if (error.response) {
-      const { status, data } = error.response;
-
-      if (status === 401) {
-        Alert.alert("Session Expired", "Your session has expired, please log back in.", [
-          { text: "OK", onPress: logout }
-        ]);
-      } else if (data.detail === "Already signed up.") {
-        Alert.alert("Info", "You're already signed up for this activity.");
-      } else if (data.detail === "Not registered for activity.") {
-        Alert.alert("Info", "You're not registered for this activity.");
-      } else {
-        console.error("Unhandled API error:", data);
-        Alert.alert('Error', 'Something went wrong: ' + (data.detail || 'Unknown error.'));
-      }
-    } else {
-      Alert.alert('Network Error', 'Please check your internet connection.');
-    }
-  };
-
+const handleUnregister = async (activityId: number, occurrence_date: string) => {
+  try {
+    await apiClient.post(`/activities/${activityId}/unregister/`, { occurrence_date }, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    Alert.alert('Success', 'You unregistered from the activity.');
+    fetchActivities(currentDate);
+  } catch (error) {
+    Alert.alert('Error', 'Unable to unregister.');
+  }
+};
+  
   const renderItem = ({ item }: { item: Activity }) => {
-    const userId = user?.id;
-    const alreadyJoined = !!(userId && item.participants.includes(userId));
-
-    console.log("Rendering activity:", item.id, "user.id:", userId, "participants:", item.participants, "alreadyJoined:", alreadyJoined);
+    const alreadyJoined = user?.id ? item.participants.includes(user.id) : false;
 
     return (
       <View style={styles.card}>
         <Text style={styles.activityName}>{item.name}</Text>
-        <Text style={styles.activityDescription}>{item.description}</Text>
-        <Text style={styles.activityTime}>{new Date(item.date_time).toLocaleString()}</Text>
+        <Text style={styles.activityTime}>{format(new Date(item.date_time), 'EEEE, MMM d, yyyy h:mm a')}</Text>
         <Text style={styles.activityLocation}>📍 {item.location}</Text>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[
-              styles.buttonBase,
-              alreadyJoined ? styles.buttonDisabled : styles.signupButton
-            ]}
-            onPress={() => handleSignup(item.id)}
-            disabled={alreadyJoined || !userId}
-          >
-            <Text style={styles.buttonText}>Join Activity</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.buttonBase,
-              !alreadyJoined ? styles.buttonDisabled : styles.unregisterButton
-            ]}
-            onPress={() => handleUnregister(item.id)}
-            disabled={!alreadyJoined || !userId}
-          >
-            <Text style={styles.buttonText}>Leave Activity</Text>
-          </TouchableOpacity>
+          {!alreadyJoined ? (
+            <TouchableOpacity style={styles.joinButton} onPress={() => handleSignup(item.id, item.date_time)}>
+	      <Text style={styles.buttonText}>Join</Text>
+	    </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.leaveButton} onPress={() => handleUnregister(item.id, item.date_time)}>
+	      <Text style={styles.buttonText}>Leave</Text>
+	    </TouchableOpacity>
+          )}
         </View>
       </View>
     );
   };
 
-  if (!user?.id) {
-    console.log("⏳ Waiting for user to load...");
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <Calendar
-        onDayPress={(day) => setSelectedDate(day.dateString)}
-        markedDates={{ [selectedDate]: { selected: true, selectedColor: '#007AFF' } }}
-      />
+      <View style={styles.navigationContainer}>
+        <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(-1)}>
+          <Text style={styles.navText}>Previous Week</Text>
+        </TouchableOpacity>
+      <Text style={styles.weekLabel}>
+        {format(startOfWeek(currentDate), 'EEEE MMM d')} - {format(endOfWeek(currentDate), 'EEEE MMM d, yyyy')}
+      </Text>
+        <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
+          <Text style={styles.navText}>Next Week</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={activities}
-        extraData={refreshToggle}
         keyExtractor={(item) => `${item.id}-${item.date_time}`}
         renderItem={renderItem}
         contentContainerStyle={{ paddingBottom: 20 }}
-        ListEmptyComponent={<Text style={styles.noActivities}>No activities for this day.</Text>}
+        ListEmptyComponent={<Text style={styles.noActivities}>No activities scheduled this week.</Text>}
       />
     </View>
   );
@@ -148,29 +122,17 @@ export default function Activities() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F3E7', padding: 10 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginVertical: 8 },
-  activityName: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
-  activityDescription: { fontSize: 15, marginBottom: 4 },
-  activityTime: { fontSize: 14, marginBottom: 2 },
-  activityLocation: { fontSize: 14, marginBottom: 8 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between' },
-  buttonBase: {
-    flex: 1,
-    padding: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  signupButton: {
-    backgroundColor: '#27ae60',
-  },
-  unregisterButton: {
-    backgroundColor: '#e74c3c',
-  },
-  buttonDisabled: {
-    backgroundColor: '#bdc3c7',
-  },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  noActivities: { marginTop: 20, textAlign: 'center', fontSize: 16 },
+  activityName: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
+  activityTime: { fontSize: 16, marginBottom: 4 },
+  activityLocation: { fontSize: 16 },
+  noActivities: { textAlign: 'center', fontSize: 18, marginTop: 20 },
+  navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  navButton: { padding: 10, backgroundColor: '#007AFF', borderRadius: 8 },
+  navText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
+  weekLabel: { fontSize: 18, fontWeight: 'bold' },
+  buttonContainer: { flexDirection: 'row', marginTop: 10 },
+  joinButton: { flex: 1, backgroundColor: '#27ae60', padding: 12, borderRadius: 8, alignItems: 'center' },
+  leaveButton: { flex: 1, backgroundColor: '#e74c3c', padding: 12, borderRadius: 8, alignItems: 'center' },
+  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
 });

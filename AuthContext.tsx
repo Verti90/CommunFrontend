@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router'; // ✅ Use router for navigation
+import { router } from 'expo-router';
 import api from './services/api';
 
 type User = {
@@ -52,17 +52,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await api.post('/login/', { username, password });
       console.log('🔐 Backend login response:', response.data);
 
-      const { token, user } = response.data;
+      const { token: { access }, user } = response.data; // ✅ critical fix here
 
-      setToken(token.access);
+      setToken(access);
       setUser(user);
-      api.defaults.headers.common['Authorization'] = `Bearer ${token.access}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
-      await AsyncStorage.setItem('@Auth:token', token.access);
+      await AsyncStorage.setItem('@Auth:token', access);
 
       console.log('✅ Navigating to Home after login');
-      router.replace('/'); // ✅ Go to home screen
+      router.replace('/');
       return true;
     } catch (error) {
       console.error('❌ Login failed:', error);
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setToken(null);
 
     console.log('🚪 Logged out, navigating to Login');
-    router.replace('/login'); // ✅ Go to login screen
+    router.replace('/login');
   };
 
   return (

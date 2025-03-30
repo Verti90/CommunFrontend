@@ -7,6 +7,8 @@ interface UserProfile {
   id: number;
   username: string;
   email: string;
+  first_name: string;
+  last_name: string;
 }
 
 export default function ProfileScreen() {
@@ -24,24 +26,21 @@ export default function ProfileScreen() {
         setProfile(response.data);
       } catch (error) {
         if (error.response && error.response.status === 401) {
-          // Handle token expiration or invalid token
           Alert.alert(
             "Session Expired",
             "Your session has expired, please log back in.",
             [
               {
                 text: "OK",
-                onPress: () => {
-                  logout();
-                }
-              }
+                onPress: () => logout(),
+              },
             ]
           );
         } else {
           console.error('Error fetching profile:', error);
           if (error.response) {
-            console.error('Response data:', error.response.data); // Log response data
-            console.error('Response status:', error.response.status); // Log response status
+            console.error('Response data:', error.response.data);
+            console.error('Response status:', error.response.status);
           }
         }
       }
@@ -61,12 +60,21 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Profile</Text>
+
+      <Text style={styles.label}>First Name:</Text>
+      <Text style={styles.value}>{profile.first_name}</Text>
+
+      <Text style={styles.label}>Last Name:</Text>
+      <Text style={styles.value}>{profile.last_name}</Text>
+
       <Text style={styles.label}>Username:</Text>
       <Text style={styles.value}>{profile.username}</Text>
+
       <Text style={styles.label}>Email:</Text>
       <Text style={styles.value}>{profile.email}</Text>
+
       <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutButtonText}>Logout</Text>
+        <Text style={styles.logoutText}>Logout</Text>
       </TouchableOpacity>
     </View>
   );
@@ -75,41 +83,40 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#FAF9E6',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F5F5DC',
-    padding: 20,
+    paddingHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
+    textAlign: 'center',
   },
   label: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginTop: 10,
   },
   value: {
+    fontSize: 18,
+    marginBottom: 5,
+  },
+  logoutButton: {
+    marginTop: 30,
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 8,
+  },
+  logoutText: {
+    color: '#fff',
     fontSize: 16,
-    color: '#555',
-    marginTop: 5,
+    fontWeight: 'bold',
   },
   loadingText: {
     fontSize: 18,
     color: '#777',
-  },
-  logoutButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#FF6347',
-    borderRadius: 5,
-  },
-  logoutButtonText: {
-    fontSize: 16,
-    color: '#FFF',
-    fontWeight: 'bold',
   },
 });

@@ -57,7 +57,7 @@ const LoginScreen = () => {
   };
 
   const handleRegister = () => {
-    router.push('/screens/RegisterScreen');
+    router.push('/RegisterScreen');
   };
 
   return (

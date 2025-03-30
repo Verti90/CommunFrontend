@@ -23,6 +23,8 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -41,7 +43,13 @@ const RegisterScreen = () => {
     }
 
     try {
-      await apiClient.post('/register/', { username, email, password });
+      await apiClient.post('/register/', {
+  username,
+  email,
+  password,
+  first_name: firstName,
+  last_name: lastName,
+});
       Alert.alert('Registration Successful', 'You can now log in');
       router.replace('/screens/LoginScreen');
     } catch (error) {
@@ -82,7 +90,21 @@ const RegisterScreen = () => {
 
           <Animated.View style={[styles.form, { opacity: fadeAnim }]}>
             <Text style={styles.label}>Username</Text>
-            <TextInput
+            <Text style={styles.label}>First Name</Text>
+	    <TextInput
+	      style={styles.input}
+	      value={firstName}
+	      onChangeText={setFirstName}
+	      placeholder="Enter first name"
+	    />
+	    <Text style={styles.label}>Last Name</Text>
+	    <TextInput
+	      style={styles.input}
+	      value={lastName}
+	      onChangeText={setLastName}
+	      placeholder="Enter last name"
+	    />
+	    <TextInput
               style={styles.input}
               value={username}
               onChangeText={setUsername}

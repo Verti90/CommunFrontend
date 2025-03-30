@@ -45,8 +45,15 @@ const fetchActivities = async (date: Date) => {
   };
 
   const changeWeek = (direction: number) => {
-    setCurrentDate(prevDate => addDays(prevDate, direction * 7));
-  };
+  const potentialNextWeek = addDays(currentDate, direction * 7);
+  const twoMonthsAhead = addMonths(new Date(), 2);
+
+  if (potentialNextWeek <= twoMonthsAhead) {
+    setCurrentDate(potentialNextWeek);
+  } else {
+    Alert.alert('Error', 'You can only view activities up to two months ahead.');
+  }
+};
 
 const handleSignup = async (activityId: number, occurrence_date: string) => {
   try {

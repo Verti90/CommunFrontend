@@ -24,27 +24,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadStoredData = async () => {
-      try {
-        const storedUser = await AsyncStorage.getItem('@Auth:user');
-        const storedToken = await AsyncStorage.getItem('@Auth:token');
+useEffect(() => {
+  const loadStoredData = async () => {
+    try {
+      const storedUser = await AsyncStorage.getItem('@Auth:user');
+      const storedToken = await AsyncStorage.getItem('@Auth:token');
+      const storedRefreshToken = await AsyncStorage.getItem('@Auth:refreshToken');
 
-        if (storedUser && storedToken) {
-          setUser(JSON.parse(storedUser));
-          setToken(storedToken);
-          api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
-          console.log('🔐 Loaded user from storage:', JSON.parse(storedUser));
-        }
-      } catch (error) {
-        console.error('Error loading auth data:', error);
-      } finally {
-        setLoading(false);
+      if (storedUser && storedToken && storedRefreshToken) {
+        setUser(JSON.parse(storedUser));
+        setToken(storedToken);
+        api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+        console.log('🔐 Loaded user from storage:', JSON.parse(storedUser));
+      } else {
+        await AsyncStorage.clear();
+        setUser(null);
+        setToken(null);
       }
-    };
+    } catch (error) {
+      console.error('Error loading auth data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadStoredData();
-  }, []);
+  loadStoredData();
+}, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -52,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await api.post('/login/', { username, password });
       console.log('🔐 Backend login response:', response.data);
 
-      const { token: { access }, user } = response.data; // ✅ critical fix here
+      const { token: { access, refresh }, user } = response.data;
 
       setToken(access);
       setUser(user);
@@ -60,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
       await AsyncStorage.setItem('@Auth:token', access);
+      await AsyncStorage.setItem('@Auth:refreshToken', refresh);
 
       console.log('✅ Navigating to Home after login');
       router.replace('/');

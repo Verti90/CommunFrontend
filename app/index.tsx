@@ -1,9 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../AuthContext';
+import apiClient from '../services/api';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
+  const { token } = useAuth();
+  const [fullName, setFullName] = useState('Resident');
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await apiClient.get('profile/', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const { first_name, last_name } = response.data;
+        setFullName(`${first_name} ${last_name}`);
+      } catch (error) {
+        console.error('Error fetching profile for Home screen:', error);
+      }
+    };
+
+    fetchProfile();
+  }, [token]);
 
   const icons = [
     { name: 'Admin', source: require('../assets/images/Admin.jpg') },
@@ -16,7 +38,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.welcome}>Welcome, Resident Name!</Text>
+      <Text style={styles.welcome}>Welcome, {fullName}!</Text>
       <Text style={styles.title}>Aravah Senior Living</Text>
       <View style={styles.iconContainer}>
         {icons.map((icon) => (

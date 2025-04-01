@@ -5,7 +5,6 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import IndexScreen from '../app/index';
 import ProfileScreen from '../app/profile';
-import ActivitiesScreen from '../app/Activities';
 import AdminScreen from '../app/Admin';
 import DiningScreen from '../app/Dining';
 import MaintenanceScreen from '../app/Maintenance';
@@ -13,68 +12,70 @@ import TransportationScreen from '../app/Transportation';
 import WellnessScreen from '../app/Wellness';
 import LoginScreen from '../app/screens/LoginScreen';
 import RegisterScreen from '../app/screens/RegisterScreen';
+import EditActivityScreen from '../app/EditActivity';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Stack Navigator for additional screens
-const OtherScreensNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Activities" component={ActivitiesScreen} />
-    <Stack.Screen name="Admin" component={AdminScreen} />
-    <Stack.Screen name="Dining" component={DiningScreen} />
-    <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
-    <Stack.Screen name="Transportation" component={TransportationScreen} />
-    <Stack.Screen name="Wellness" component={WellnessScreen} />
-  </Stack.Navigator>
-);
-
-// Bottom Tab Navigator
-const MainTabNavigator = () => (
-  <Tab.Navigator screenOptions={{ headerShown: false }}>
-    <Tab.Screen
-      name="Home"
-      component={IndexScreen}
-      options={{
-        tabBarIcon: ({ size, color }) => (
-          <Image
-            source={require('../assets/images/Home.png')}
-            style={{ width: size, height: size, tintColor: color }}
-          />
-        ),
-      }}
-    />
-    <Tab.Screen
-      name="More"
-      component={OtherScreensNavigator}
-      options={{ tabBarButton: () => null }}
-    />
-    <Tab.Screen
-      name="Profile"
-      component={ProfileScreen}
-      options={{
-        tabBarIcon: ({ size, color }) => (
-          <Image
-            source={require('../assets/images/Profile.png')}
-            style={{ width: size, height: size, tintColor: color }}
-          />
-        ),
-      }}
-    />
-  </Tab.Navigator>
-);
-
-// Authentication stack (Login/Register)
-const AuthStack = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="Login" component={LoginScreen} />
-    <Stack.Screen name="Register" component={RegisterScreen} />
-  </Stack.Navigator>
-);
-
-// Root Layout Navigator
 const RootLayoutNav = () => {
   const { user, isLoading } = useAuth();
+
+  const ActivitiesScreen = user?.role === 'staff'
+    ? require('../app/StaffActivities').default
+    : require('../app/Activities').default;
+
+  const OtherScreensNavigator = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Activities" component={ActivitiesScreen} />
+      <Stack.Screen name="Admin" component={AdminScreen} />
+      <Stack.Screen name="Dining" component={DiningScreen} />
+      <Stack.Screen name="Maintenance" component={MaintenanceScreen} />
+      <Stack.Screen name="Transportation" component={TransportationScreen} />
+      <Stack.Screen name="Wellness" component={WellnessScreen} />
+      <Stack.Screen name="EditActivity" component={EditActivityScreen} />
+    </Stack.Navigator>
+  );
+
+  const MainTabNavigator = () => (
+    <Tab.Navigator screenOptions={{ headerShown: false }}>
+      <Tab.Screen
+        name="Home"
+        component={IndexScreen}
+        options={{
+          tabBarIcon: ({ size, color }) => (
+            <Image
+              source={require('../assets/images/Home.png')}
+              style={{ width: size, height: size, tintColor: color }}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="More"
+        component={OtherScreensNavigator}
+        options={{ tabBarButton: () => null }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarIcon: ({ size, color }) => (
+            <Image
+              source={require('../assets/images/Profile.png')}
+              style={{ width: size, height: size, tintColor: color }}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+
+  const AuthStack = () => (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="Login" component={LoginScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
+    </Stack.Navigator>
+  );
 
   if (isLoading) {
     return (

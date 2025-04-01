@@ -6,7 +6,7 @@ import apiClient from '../services/api';
 
 export default function HomeScreen() {
   const navigation = useNavigation();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [fullName, setFullName] = useState('Resident');
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function HomeScreen() {
   }, [token]);
 
   const icons = [
-    { name: 'Admin', source: require('../assets/images/Admin.jpg') },
+    ...(user?.role === 'staff' ? [{ name: 'Admin', source: require('../assets/images/Admin.jpg') }] : []),
     { name: 'Dining', source: require('../assets/images/Dining.jpg') },
     { name: 'Activities', source: require('../assets/images/Activities.jpg') },
     { name: 'Maintenance', source: require('../assets/images/Maintenance.jpg') },

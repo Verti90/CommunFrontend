@@ -1,8 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+} from 'react-native';
 import apiClient from '../services/api';
 import { useAuth } from '../AuthContext';
-import { addDays, addMonths, format, startOfWeek, endOfWeek } from 'date-fns';
+import {
+  format,
+  addDays,
+  addMonths,
+  startOfWeek,
+  endOfWeek,
+  parseISO,
+} from 'date-fns';
 
 interface Activity {
   id: number;
@@ -13,26 +27,28 @@ interface Activity {
   participants: number[];
 }
 
+const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 export default function WeeklyActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { token, logout, user } = useAuth();
+  const { token, user } = useAuth();
 
   useEffect(() => {
     fetchActivities(currentDate);
   }, [currentDate, token]);
 
-const fetchActivities = async (date: Date) => {
-  const now = new Date();
-  const twoMonthsAhead = addMonths(now, 2);
-  
-  if (date > twoMonthsAhead) {
-    Alert.alert('Error', 'You can only view activities up to two months ahead.');
-    return;
-  }
+  const fetchActivities = async (date: Date) => {
+    const now = new Date();
+    const twoMonthsAhead = addMonths(now, 2);
 
-  const start = format(startOfWeek(date), 'yyyy-MM-dd');
-  const end = format(endOfWeek(date), 'yyyy-MM-dd');
+    if (date > twoMonthsAhead) {
+      Alert.alert('Error', 'You can only view activities up to two months ahead.');
+      return;
+    }
+
+    const start = format(startOfWeek(date), 'yyyy-MM-dd');
+    const end = format(endOfWeek(date), 'yyyy-MM-dd');
 
     try {
       const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
@@ -41,6 +57,50 @@ const fetchActivities = async (date: Date) => {
       setActivities(response.data);
     } catch (error) {
       Alert.alert('Error', 'Could not fetch activities.');
+    }
+  };
+
+  const groupByDay = (): Record<string, Activity[]> => {
+    const map: Record<string, Activity[]> = {
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Saturday: [],
+      Sunday: [],
+    };
+
+    activities.forEach((activity) => {
+      const day = format(parseISO(activity.date_time), 'EEEE');
+      if (map[day]) {
+        map[day].push(activity);
+      }
+    });
+    return map;
+  };
+
+  const handleSignup = async (activityId: number, occurrence_date: string) => {
+    try {
+      await apiClient.post(`/activities/${activityId}/signup/`, { occurrence_date }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Alert.alert('Success', 'You signed up for the activity!');
+      fetchActivities(currentDate);
+    } catch (error) {
+      Alert.alert('Error', 'Unable to sign up.');
+    }
+  };
+
+  const handleUnregister = async (activityId: number, occurrence_date: string) => {
+    try {
+      await apiClient.post(`/activities/${activityId}/unregister/`, { occurrence_date }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      Alert.alert('Success', 'You unregistered from the activity.');
+      fetchActivities(currentDate);
+    } catch (error) {
+      Alert.alert('Error', 'Unable to unregister.');
     }
   };
 
@@ -55,91 +115,105 @@ const fetchActivities = async (date: Date) => {
   }
 };
 
-const handleSignup = async (activityId: number, occurrence_date: string) => {
-  try {
-    await apiClient.post(`/activities/${activityId}/signup/`, { occurrence_date }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    Alert.alert('Success', 'You signed up for the activity!');
-    fetchActivities(currentDate);
-  } catch (error) {
-    Alert.alert('Error', 'Unable to sign up.');
-  }
-};
-
-const handleUnregister = async (activityId: number, occurrence_date: string) => {
-  try {
-    await apiClient.post(`/activities/${activityId}/unregister/`, { occurrence_date }, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    Alert.alert('Success', 'You unregistered from the activity.');
-    fetchActivities(currentDate);
-  } catch (error) {
-    Alert.alert('Error', 'Unable to unregister.');
-  }
-};
-  
-  const renderItem = ({ item }: { item: Activity }) => {
-    const alreadyJoined = user?.id ? item.participants.includes(user.id) : false;
-
-    return (
-      <View style={styles.card}>
-        <Text style={styles.activityName}>{item.name}</Text>
-        <Text style={styles.activityTime}>{format(new Date(item.date_time), 'EEEE, MMM d, yyyy h:mm a')}</Text>
-        <Text style={styles.activityLocation}>📍 {item.location}</Text>
-        <View style={styles.buttonContainer}>
-          {!alreadyJoined ? (
-            <TouchableOpacity style={styles.joinButton} onPress={() => handleSignup(item.id, item.date_time)}>
-	      <Text style={styles.buttonText}>Join</Text>
-	    </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.leaveButton} onPress={() => handleUnregister(item.id, item.date_time)}>
-	      <Text style={styles.buttonText}>Leave</Text>
-	    </TouchableOpacity>
-          )}
-        </View>
-      </View>
-    );
-  };
+  const groupedActivities = groupByDay();
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Weekly Schedule</Text>
       <View style={styles.navigationContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(-1)}>
           <Text style={styles.navText}>Previous Week</Text>
         </TouchableOpacity>
-      <Text style={styles.weekLabel}>
-        {format(startOfWeek(currentDate), 'EEEE MMM d')} - {format(endOfWeek(currentDate), 'EEEE MMM d, yyyy')}
-      </Text>
+        <Text style={styles.weekLabel}>
+          {format(startOfWeek(currentDate), 'MMM d')} - {format(endOfWeek(currentDate), 'MMM d, yyyy')}
+        </Text>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
           <Text style={styles.navText}>Next Week</Text>
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={activities}
-        keyExtractor={(item) => `${item.id}-${item.date_time}`}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 20 }}
-        ListEmptyComponent={<Text style={styles.noActivities}>No activities scheduled this week.</Text>}
-      />
-    </View>
+      <View style={styles.grid}>
+        {daysOfWeek.map((day) => (
+          <View key={day} style={styles.dayBox}>
+            <Text style={styles.dayHeader}>{day}</Text>
+            {groupedActivities[day].length === 0 ? (
+              <Text style={styles.noActivity}>No activities</Text>
+            ) : (
+              groupedActivities[day].map((activity) => {
+                const joined = user?.id && activity.participants.includes(user.id);
+                return (
+                  <View
+                    key={`${activity.id}-${activity.date_time}`}
+                    style={[styles.activityCard, joined && styles.signedUpCard]}
+                  >
+                    <Text style={styles.activityText}>{format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}</Text>
+                    <Text style={styles.locationText}>📍 {activity.location}</Text>
+                    {joined ? (
+                      <TouchableOpacity style={styles.cancelButton} onPress={() => handleUnregister(activity.id, activity.date_time)}>
+                        <Text style={styles.cancelText}>×</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity onPress={() => handleSignup(activity.id, activity.date_time)}>
+                        <Text style={styles.signupLink}>Sign Up</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })
+            )}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F3E7', padding: 10 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginVertical: 8 },
-  activityName: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  activityTime: { fontSize: 16, marginBottom: 4 },
-  activityLocation: { fontSize: 16 },
-  noActivities: { textAlign: 'center', fontSize: 18, marginTop: 20 },
-  navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  navButton: { padding: 10, backgroundColor: '#007AFF', borderRadius: 8 },
-  navText: { color: '#FFFFFF', fontWeight: 'bold', fontSize: 16 },
-  weekLabel: { fontSize: 18, fontWeight: 'bold' },
-  buttonContainer: { flexDirection: 'row', marginTop: 10 },
-  joinButton: { flex: 1, backgroundColor: '#27ae60', padding: 12, borderRadius: 8, alignItems: 'center' },
-  leaveButton: { flex: 1, backgroundColor: '#e74c3c', padding: 12, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: 'bold' },
+  container: { padding: 10, backgroundColor: '#f3f0e9' },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
+  navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  navButton: { backgroundColor: '#c8b6a6', padding: 10, borderRadius: 10 },
+  navText: { color: 'white', fontWeight: 'bold' },
+  weekLabel: { fontSize: 16, fontWeight: 'bold' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  dayBox: {
+    width: '48%',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+    minHeight: 140,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  dayHeader: { fontSize: 18, fontWeight: '600', borderBottomWidth: 1, borderColor: '#ddd', marginBottom: 5 },
+  activityCard: {
+    marginTop: 8,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 8,
+    padding: 6,
+    position: 'relative',
+  },
+  signedUpCard: {
+    backgroundColor: '#d1f7d6',
+  },
+  activityText: { fontSize: 14, fontWeight: '500' },
+  locationText: { fontSize: 13, color: '#555' },
+  signupLink: { color: '#007AFF', marginTop: 4 },
+  cancelButton: {
+    position: 'absolute',
+    top: 4,
+    right: 6,
+    backgroundColor: '#e74c3c',
+    borderRadius: 12,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelText: { color: 'white', fontWeight: 'bold', fontSize: 14, lineHeight: 18 },
+  noActivity: { fontStyle: 'italic', color: '#aaa', marginTop: 8 },
 });

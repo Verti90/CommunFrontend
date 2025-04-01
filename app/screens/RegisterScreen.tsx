@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useNavigation } from '@react-navigation/native';
 import apiClient from '../../services/api';
 
 const screenWidth = Dimensions.get('window').width;
@@ -26,7 +26,7 @@ const RegisterScreen = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const router = useRouter();
+  const navigation = useNavigation();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -44,14 +44,14 @@ const RegisterScreen = () => {
 
     try {
       await apiClient.post('/register/', {
-  username,
-  email,
-  password,
-  first_name: firstName,
-  last_name: lastName,
-});
+        username,
+        email,
+        password,
+        first_name: firstName,
+        last_name: lastName,
+      });
       Alert.alert('Registration Successful', 'You can now log in');
-      router.replace('/screens/LoginScreen');
+      navigation.navigate('Login');
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response) {
@@ -89,22 +89,24 @@ const RegisterScreen = () => {
           </View>
 
           <Animated.View style={[styles.form, { opacity: fadeAnim }]}>
-            <Text style={styles.label}>Username</Text>
             <Text style={styles.label}>First Name</Text>
-	    <TextInput
-	      style={styles.input}
-	      value={firstName}
-	      onChangeText={setFirstName}
-	      placeholder="Enter first name"
-	    />
-	    <Text style={styles.label}>Last Name</Text>
-	    <TextInput
-	      style={styles.input}
-	      value={lastName}
-	      onChangeText={setLastName}
-	      placeholder="Enter last name"
-	    />
-	    <TextInput
+            <TextInput
+              style={styles.input}
+              value={firstName}
+              onChangeText={setFirstName}
+              placeholder="Enter first name"
+            />
+
+            <Text style={styles.label}>Last Name</Text>
+            <TextInput
+              style={styles.input}
+              value={lastName}
+              onChangeText={setLastName}
+              placeholder="Enter last name"
+            />
+
+            <Text style={styles.label}>Username</Text>
+            <TextInput
               style={styles.input}
               value={username}
               onChangeText={setUsername}
@@ -146,7 +148,7 @@ const RegisterScreen = () => {
 
             <TouchableOpacity
               style={styles.loginButton}
-              onPress={() => router.replace('/screens/LoginScreen')}
+              onPress={() => navigation.navigate('Login')}
             >
               <Text style={styles.loginText}>Already have an account? Login</Text>
             </TouchableOpacity>

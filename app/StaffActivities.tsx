@@ -46,6 +46,8 @@ export default function StaffActivities() {
   });
   const [isPickerVisible, setPickerVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [preFilledDate, setPreFilledDate] = useState<Date | null>(null);
+  const [dateLocked, setDateLocked] = useState(false);
 
   const { token } = useAuth();
   const navigation = useNavigation();
@@ -84,6 +86,8 @@ export default function StaffActivities() {
       setModalVisible(false);
       setNewActivity({ name: '', description: '', location: '', date_time: '' });
       setSelectedDate(null);
+      setPreFilledDate(null);
+      setDateLocked(false);
       fetchActivities(currentDate);
     } catch (error) {
       Alert.alert('Error', 'Could not add activity.');
@@ -127,16 +131,35 @@ export default function StaffActivities() {
   const handleConfirm = (date: Date) => {
     setPickerVisible(false);
     setSelectedDate(date);
+
+    let fullDateTime: Date;
+    if (dateLocked && preFilledDate) {
+      fullDateTime = new Date(preFilledDate);
+      fullDateTime.setHours(date.getHours());
+      fullDateTime.setMinutes(date.getMinutes());
+    } else {
+      fullDateTime = date;
+    }
+
     setNewActivity({
       ...newActivity,
-      date_time: format(date, "yyyy-MM-dd'T'HH:mm"),
+      date_time: format(fullDateTime, "yyyy-MM-dd'T'HH:mm"),
     });
+  };
+
+  const getDateForDay = (index: number): string => {
+    const date = new Date(startOfWeek(currentDate));
+    date.setDate(date.getDate() + index);
+    return format(date, 'MMM d');
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Staff Activity Manager</Text>
-      <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
+      <TouchableOpacity style={styles.addButton} onPress={() => {
+        setModalVisible(true);
+        setDateLocked(false);
+      }}>
         <Text style={styles.addButtonText}>+ Add Activity</Text>
       </TouchableOpacity>
 
@@ -153,9 +176,9 @@ export default function StaffActivities() {
       </View>
 
       <View style={styles.grid}>
-        {daysOfWeek.map((day) => (
+        {daysOfWeek.map((day, index) => (
           <View key={day} style={styles.dayBox}>
-            <Text style={styles.dayHeader}>{day}</Text>
+            <Text style={styles.dayHeader}>{day} - {getDateForDay(index)}</Text>
             {groupedActivities[day].length === 0 ? (
               <Text style={styles.noActivity}>No activities</Text>
             ) : (
@@ -172,6 +195,18 @@ export default function StaffActivities() {
                 </View>
               ))
             )}
+            <TouchableOpacity
+              style={styles.addDayButton}
+              onPress={() => {
+                const start = startOfWeek(currentDate);
+                const dayDate = new Date(start.setDate(start.getDate() + index));
+                setPreFilledDate(new Date(dayDate));
+                setDateLocked(true);
+                setModalVisible(true);
+              }}
+            >
+              <Text style={styles.addDayButtonText}>+ Add Activity</Text>
+            </TouchableOpacity>
           </View>
         ))}
       </View>
@@ -183,13 +218,23 @@ export default function StaffActivities() {
           <TextInput placeholder="Description" style={styles.input} value={newActivity.description} onChangeText={(text) => setNewActivity({ ...newActivity, description: text })} />
           <TextInput placeholder="Location" style={styles.input} value={newActivity.location} onChangeText={(text) => setNewActivity({ ...newActivity, location: text })} />
 
+          {dateLocked ? (
+            <View style={styles.input}>
+              <Text>{preFilledDate ? format(preFilledDate, 'yyyy-MM-dd') : ''}</Text>
+            </View>
+          ) : (
+            <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
+              <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-            <Text>{selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : 'Select Date & Time'}</Text>
+            <Text>{selectedDate ? format(selectedDate, 'h:mm a') : 'Select Time'}</Text>
           </TouchableOpacity>
 
           <DateTimePickerModal
             isVisible={isPickerVisible}
-            mode="datetime"
+            mode={dateLocked ? 'time' : 'datetime'}
             date={selectedDate || new Date()}
             onConfirm={handleConfirm}
             onCancel={() => setPickerVisible(false)}
@@ -198,7 +243,10 @@ export default function StaffActivities() {
           <TouchableOpacity style={styles.modalButton} onPress={addActivity}>
             <Text style={styles.modalButtonText}>Submit</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => setModalVisible(false)}>
+          <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={() => {
+            setModalVisible(false);
+            setDateLocked(false);
+          }}>
             <Text style={styles.modalButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -233,4 +281,6 @@ const styles = StyleSheet.create({
   modalButton: { backgroundColor: '#2f80ed', padding: 12, borderRadius: 6, marginTop: 10 },
   modalButtonText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
   cancelButton: { backgroundColor: '#999' },
+  addDayButton: { backgroundColor: '#27ae60', padding: 6, borderRadius: 8, marginTop: 10 },
+  addDayButtonText: { color: 'white', fontSize: 13, textAlign: 'center' },
 });

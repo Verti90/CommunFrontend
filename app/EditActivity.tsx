@@ -11,6 +11,8 @@ import {
 import apiClient from '../services/api';
 import { useAuth } from '../AuthContext';
 import { useRoute, useNavigation } from '@react-navigation/native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { format } from 'date-fns';
 
 export default function EditActivity() {
   const { token } = useAuth();
@@ -25,6 +27,8 @@ export default function EditActivity() {
     location: '',
     date_time: '',
   });
+  const [isPickerVisible, setPickerVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchActivity();
@@ -36,6 +40,7 @@ export default function EditActivity() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setActivity(response.data);
+      setSelectedDate(new Date(response.data.date_time));
     } catch (error) {
       Alert.alert('Error', 'Failed to load activity details.');
     } finally {
@@ -53,6 +58,15 @@ export default function EditActivity() {
     } catch (error) {
       Alert.alert('Error', 'Failed to update activity.');
     }
+  };
+
+  const handleConfirm = (date: Date) => {
+    setPickerVisible(false);
+    setSelectedDate(date);
+    setActivity({
+      ...activity,
+      date_time: format(date, "yyyy-MM-dd'T'HH:mm"),
+    });
   };
 
   if (loading) {
@@ -85,11 +99,17 @@ export default function EditActivity() {
         value={activity.location}
         onChangeText={(text) => setActivity({ ...activity, location: text })}
       />
-      <TextInput
-        placeholder="Date Time (YYYY-MM-DDTHH:MM)"
-        style={styles.input}
-        value={activity.date_time}
-        onChangeText={(text) => setActivity({ ...activity, date_time: text })}
+
+      <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
+        <Text>{selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : 'Select Date & Time'}</Text>
+      </TouchableOpacity>
+
+      <DateTimePickerModal
+        isVisible={isPickerVisible}
+        mode="datetime"
+        date={selectedDate || new Date()}
+        onConfirm={handleConfirm}
+        onCancel={() => setPickerVisible(false)}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>

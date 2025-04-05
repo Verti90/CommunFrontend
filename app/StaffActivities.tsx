@@ -8,6 +8,7 @@ import {
   ScrollView,
   TextInput,
   Modal,
+  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import apiClient from '../services/api';
@@ -20,6 +21,7 @@ import {
   endOfWeek,
   parseISO,
 } from 'date-fns';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 interface Activity {
   id: number;
@@ -42,6 +44,9 @@ export default function StaffActivities() {
     location: '',
     date_time: '',
   });
+  const [isPickerVisible, setPickerVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+
   const { token } = useAuth();
   const navigation = useNavigation();
 
@@ -78,6 +83,7 @@ export default function StaffActivities() {
       });
       setModalVisible(false);
       setNewActivity({ name: '', description: '', location: '', date_time: '' });
+      setSelectedDate(null);
       fetchActivities(currentDate);
     } catch (error) {
       Alert.alert('Error', 'Could not add activity.');
@@ -117,6 +123,15 @@ export default function StaffActivities() {
   };
 
   const groupedActivities = groupByDay();
+
+  const handleConfirm = (date: Date) => {
+    setPickerVisible(false);
+    setSelectedDate(date);
+    setNewActivity({
+      ...newActivity,
+      date_time: format(date, "yyyy-MM-dd'T'HH:mm"),
+    });
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -167,7 +182,18 @@ export default function StaffActivities() {
           <TextInput placeholder="Name" style={styles.input} value={newActivity.name} onChangeText={(text) => setNewActivity({ ...newActivity, name: text })} />
           <TextInput placeholder="Description" style={styles.input} value={newActivity.description} onChangeText={(text) => setNewActivity({ ...newActivity, description: text })} />
           <TextInput placeholder="Location" style={styles.input} value={newActivity.location} onChangeText={(text) => setNewActivity({ ...newActivity, location: text })} />
-          <TextInput placeholder="Date Time (YYYY-MM-DDTHH:MM)" style={styles.input} value={newActivity.date_time} onChangeText={(text) => setNewActivity({ ...newActivity, date_time: text })} />
+
+          <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
+            <Text>{selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : 'Select Date & Time'}</Text>
+          </TouchableOpacity>
+
+          <DateTimePickerModal
+            isVisible={isPickerVisible}
+            mode="datetime"
+            date={selectedDate || new Date()}
+            onConfirm={handleConfirm}
+            onCancel={() => setPickerVisible(false)}
+          />
 
           <TouchableOpacity style={styles.modalButton} onPress={addActivity}>
             <Text style={styles.modalButtonText}>Submit</Text>
@@ -201,7 +227,7 @@ const styles = StyleSheet.create({
   editButton: { marginTop: 5, backgroundColor: '#2980b9', padding: 5, borderRadius: 5 },
   editText: { color: 'white', textAlign: 'center' },
   noActivity: { fontStyle: 'italic', color: '#aaa', marginTop: 8 },
-  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f3f0e9' },
   modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, marginBottom: 10 },
   modalButton: { backgroundColor: '#2f80ed', padding: 12, borderRadius: 6, marginTop: 10 },

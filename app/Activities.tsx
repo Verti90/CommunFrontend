@@ -72,7 +72,9 @@ export default function WeeklyActivities() {
     };
 
     activities.forEach((activity) => {
-      const day = format(parseISO(activity.date_time), 'EEEE');
+      const localDate = new Date(parseISO(activity.date_time));
+      const localMidnight = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+      const day = format(localMidnight, 'EEEE');
       if (map[day]) {
         map[day].push(activity);
       }

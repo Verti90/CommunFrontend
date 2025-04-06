@@ -65,7 +65,7 @@ export default function EditActivity() {
     setSelectedDate(date);
     setActivity({
       ...activity,
-      date_time: format(date, "yyyy-MM-dd'T'HH:mm"),
+      date_time: date.toISOString(),
     });
   };
 
@@ -101,7 +101,11 @@ export default function EditActivity() {
       />
 
       <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-        <Text>{selectedDate ? format(selectedDate, "yyyy-MM-dd'T'HH:mm") : 'Select Date & Time'}</Text>
+         <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
+         <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
       </TouchableOpacity>
 
       <DateTimePickerModal

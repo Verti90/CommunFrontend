@@ -8,7 +8,6 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import apiClient from '../services/api';
@@ -65,8 +64,8 @@ export default function StaffActivities() {
       return;
     }
 
-    const start = format(startOfWeek(date), 'yyyy-MM-dd');
-    const end = format(endOfWeek(date), 'yyyy-MM-dd');
+    const start = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const end = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
 
     try {
       const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
@@ -110,7 +109,9 @@ export default function StaffActivities() {
       Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [],
     };
     activities.forEach((activity) => {
-      const day = format(parseISO(activity.date_time), 'EEEE');
+      const localDate = new Date(parseISO(activity.date_time));
+      const localMidnight = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+      const day = format(localMidnight, 'EEEE');
       if (map[day]) map[day].push(activity);
     });
     return map;
@@ -134,23 +135,26 @@ export default function StaffActivities() {
 
     let fullDateTime: Date;
     if (dateLocked && preFilledDate) {
-      fullDateTime = new Date(preFilledDate);
-      fullDateTime.setHours(date.getHours());
-      fullDateTime.setMinutes(date.getMinutes());
+      fullDateTime = new Date(
+        preFilledDate.getFullYear(),
+        preFilledDate.getMonth(),
+        preFilledDate.getDate(),
+        date.getHours(),
+        date.getMinutes()
+      );
     } else {
       fullDateTime = date;
     }
 
     setNewActivity({
       ...newActivity,
-      date_time: format(fullDateTime, "yyyy-MM-dd'T'HH:mm"),
+      date_time: fullDateTime.toISOString(),
     });
   };
 
   const getDateForDay = (index: number): string => {
-    const date = new Date(startOfWeek(currentDate));
-    date.setDate(date.getDate() + index);
-    return format(date, 'MMM d');
+    const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 1 }), index);
+    return format(dayDate, 'MMM d');
   };
 
   return (
@@ -168,7 +172,7 @@ export default function StaffActivities() {
           <Text style={styles.navText}>Previous Week</Text>
         </TouchableOpacity>
         <Text style={styles.weekLabel}>
-          {format(startOfWeek(currentDate), 'MMM d')} - {format(endOfWeek(currentDate), 'MMM d, yyyy')}
+          {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy')}
         </Text>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
           <Text style={styles.navText}>Next Week</Text>
@@ -198,8 +202,7 @@ export default function StaffActivities() {
             <TouchableOpacity
               style={styles.addDayButton}
               onPress={() => {
-                const start = startOfWeek(currentDate);
-                const dayDate = new Date(start.setDate(start.getDate() + index));
+                const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 1 }), index);
                 setPreFilledDate(new Date(dayDate));
                 setDateLocked(true);
                 setModalVisible(true);
@@ -229,7 +232,7 @@ export default function StaffActivities() {
           )}
 
           <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-            <Text>{selectedDate ? format(selectedDate, 'h:mm a') : 'Select Time'}</Text>
+            <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
           </TouchableOpacity>
 
           <DateTimePickerModal

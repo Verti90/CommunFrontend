@@ -31,7 +31,7 @@ interface Activity {
   participants: number[];
 }
 
-const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 export default function StaffActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -64,8 +64,8 @@ export default function StaffActivities() {
       return;
     }
 
-    const start = format(startOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
-    const end = format(endOfWeek(date, { weekStartsOn: 1 }), 'yyyy-MM-dd');
+    const start = format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const end = format(endOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
 
     try {
       const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
@@ -153,7 +153,7 @@ export default function StaffActivities() {
   };
 
   const getDateForDay = (index: number): string => {
-    const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 1 }), index);
+    const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 0 }), index);
     return format(dayDate, 'MMM d');
   };
 
@@ -172,7 +172,7 @@ export default function StaffActivities() {
           <Text style={styles.navText}>Previous Week</Text>
         </TouchableOpacity>
         <Text style={styles.weekLabel}>
-          {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy')}
+          {format(startOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d, yyyy')}
         </Text>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
           <Text style={styles.navText}>Next Week</Text>
@@ -202,7 +202,7 @@ export default function StaffActivities() {
             <TouchableOpacity
               style={styles.addDayButton}
               onPress={() => {
-                const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 1 }), index);
+                const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 0 }), index);
                 setPreFilledDate(new Date(dayDate));
                 setDateLocked(true);
                 setModalVisible(true);

@@ -13,10 +13,9 @@ import {
   format,
   addDays,
   addMonths,
-  startOfWeek,
-  endOfWeek,
   parseISO,
 } from 'date-fns';
+import { getWeekRange } from '../utils/time';
 
 interface Activity {
   id: number;
@@ -47,11 +46,12 @@ export default function WeeklyActivities() {
       return;
     }
 
-    const start = format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    const end = format(endOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const { start, end } = getWeekRange(date);
+    const startStr = format(start, 'yyyy-MM-dd');
+    const endStr = format(end, 'yyyy-MM-dd');
 
     try {
-      const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
+      const response = await apiClient.get(`activities/?start_date=${startStr}&end_date=${endStr}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setActivities(response.data);
@@ -127,7 +127,7 @@ export default function WeeklyActivities() {
           <Text style={styles.navText}>Previous Week</Text>
         </TouchableOpacity>
         <Text style={styles.weekLabel}>
-          {format(startOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d, yyyy')}
+          {format(getWeekRange(currentDate).start, 'MMM d')} - {format(getWeekRange(currentDate).end, 'MMM d, yyyy')}
         </Text>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
           <Text style={styles.navText}>Next Week</Text>

@@ -21,6 +21,7 @@ import {
   parseISO,
 } from 'date-fns';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { getWeekRange, getDateForWeekdayIndex } from '../utils/time';
 
 interface Activity {
   id: number;
@@ -64,11 +65,12 @@ export default function StaffActivities() {
       return;
     }
 
-    const start = format(startOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
-    const end = format(endOfWeek(date, { weekStartsOn: 0 }), 'yyyy-MM-dd');
+    const { start, end } = getWeekRange(date);
+    const startStr = format(start, 'yyyy-MM-dd');
+    const endStr = format(end, 'yyyy-MM-dd');
 
     try {
-      const response = await apiClient.get(`activities/?start_date=${start}&end_date=${end}`, {
+      const response = await apiClient.get(`activities/?start_date=${startStr}&end_date=${endStr}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setActivities(response.data);
@@ -153,9 +155,9 @@ export default function StaffActivities() {
   };
 
   const getDateForDay = (index: number): string => {
-    const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 0 }), index);
-    return format(dayDate, 'MMM d');
-  };
+  const dayDate = getDateForWeekdayIndex(currentDate, index);
+  return format(dayDate, 'MMM d');
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -172,7 +174,7 @@ export default function StaffActivities() {
           <Text style={styles.navText}>Previous Week</Text>
         </TouchableOpacity>
         <Text style={styles.weekLabel}>
-          {format(startOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 0 }), 'MMM d, yyyy')}
+          {format(getWeekRange(currentDate).start, 'MMM d')} - {format(getWeekRange(currentDate).end, 'MMM d, yyyy')}
         </Text>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(1)}>
           <Text style={styles.navText}>Next Week</Text>
@@ -202,7 +204,7 @@ export default function StaffActivities() {
             <TouchableOpacity
               style={styles.addDayButton}
               onPress={() => {
-                const dayDate = addDays(startOfWeek(new Date(currentDate), { weekStartsOn: 0 }), index);
+                const dayDate = getDateForWeekdayIndex(currentDate, index);
                 setPreFilledDate(new Date(dayDate));
                 setDateLocked(true);
                 setModalVisible(true);

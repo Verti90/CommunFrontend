@@ -44,13 +44,15 @@ export default function StaffActivities() {
     location: '',
     date_time: '',
   });
-  const [isPickerVisible, setPickerVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [preFilledDate, setPreFilledDate] = useState<Date | null>(null);
   const [dateLocked, setDateLocked] = useState(false);
 
   const { token } = useAuth();
   const navigation = useNavigation();
+
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
 
   useEffect(() => {
     fetchActivities(currentDate);
@@ -80,20 +82,31 @@ export default function StaffActivities() {
   };
 
   const addActivity = async () => {
-    try {
-      await apiClient.post('activities/', newActivity, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setModalVisible(false);
-      setNewActivity({ name: '', description: '', location: '', date_time: '' });
-      setSelectedDate(null);
-      setPreFilledDate(null);
-      setDateLocked(false);
-      fetchActivities(currentDate);
-    } catch (error) {
-      Alert.alert('Error', 'Could not add activity.');
-    }
-  };
+  const missingFields = [];
+  if (!newActivity.name) missingFields.push('Name');
+  if (!newActivity.description) missingFields.push('Description');
+  if (!newActivity.location) missingFields.push('Location');
+  if (!newActivity.date_time) missingFields.push('Date & Time');
+
+  if (missingFields.length > 0) {
+    Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
+    return;
+  }
+
+  try {
+    await apiClient.post('activities/', newActivity, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setModalVisible(false);
+    setNewActivity({ name: '', description: '', location: '', date_time: '' });
+    setSelectedDate(null);
+    setPreFilledDate(null);
+    setDateLocked(false);
+    fetchActivities(currentDate);
+  } catch (error) {
+    Alert.alert('Error', 'Could not add activity. Please try again.');
+  }
+};
 
   const deleteActivity = async (id: number) => {
     try {
@@ -130,29 +143,6 @@ export default function StaffActivities() {
   };
 
   const groupedActivities = groupByDay();
-
-  const handleConfirm = (date: Date) => {
-    setPickerVisible(false);
-    setSelectedDate(date);
-
-    let fullDateTime: Date;
-    if (dateLocked && preFilledDate) {
-      fullDateTime = new Date(
-        preFilledDate.getFullYear(),
-        preFilledDate.getMonth(),
-        preFilledDate.getDate(),
-        date.getHours(),
-        date.getMinutes()
-      );
-    } else {
-      fullDateTime = date;
-    }
-
-    setNewActivity({
-      ...newActivity,
-      date_time: fullDateTime.toISOString(),
-    });
-  };
 
   const getDateForDay = (index: number): string => {
   const dayDate = getDateForWeekdayIndex(currentDate, index);
@@ -228,22 +218,47 @@ export default function StaffActivities() {
               <Text>{preFilledDate ? format(preFilledDate, 'yyyy-MM-dd') : ''}</Text>
             </View>
           ) : (
-            <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-              <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
-            </TouchableOpacity>
-          )}
+           <>
+	    <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.input}>
+	      <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
+	    </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-            <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
-          </TouchableOpacity>
+	    <TouchableOpacity onPress={() => setTimePickerVisible(true)} style={styles.input}>
+	      <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
+	    </TouchableOpacity>
+	  </>
+	  )}
 
           <DateTimePickerModal
-            isVisible={isPickerVisible}
-            mode={dateLocked ? 'time' : 'datetime'}
-            date={selectedDate || new Date()}
-            onConfirm={handleConfirm}
-            onCancel={() => setPickerVisible(false)}
-          />
+	  isVisible={isDatePickerVisible}
+	  mode="date"
+	  date={selectedDate || new Date()}
+	  onConfirm={(date) => {
+	    setDatePickerVisible(false);
+	    const updated = new Date(date);
+	    const time = selectedDate || new Date();
+	    updated.setHours(time.getHours(), time.getMinutes());
+	    setSelectedDate(updated);
+	    setNewActivity((prev) => ({ ...prev, date_time: updated.toISOString() }));
+	  }}
+	  onCancel={() => setDatePickerVisible(false)}
+	/>
+
+	  <DateTimePickerModal
+  isVisible={isTimePickerVisible}
+  mode="time"
+  date={selectedDate || new Date()}
+  onConfirm={(time) => {
+    setTimePickerVisible(false);
+    const updated = selectedDate || new Date();
+    updated.setHours(time.getHours(), time.getMinutes());
+    const finalDate = new Date(updated); // define it here
+    setSelectedDate(finalDate);
+    setNewActivity((prev) => ({ ...prev, date_time: finalDate.toISOString() }));  // ✅ now it's defined
+  }}
+  onCancel={() => setTimePickerVisible(false)}
+/>
+
 
           <TouchableOpacity style={styles.modalButton} onPress={addActivity}>
             <Text style={styles.modalButtonText}>Submit</Text>

@@ -27,8 +27,9 @@ export default function EditActivity() {
     location: '',
     date_time: '',
   });
-  const [isPickerVisible, setPickerVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isDatePickerVisible, setDatePickerVisible] = useState(false);
+  const [isTimePickerVisible, setTimePickerVisible] = useState(false);
 
   useEffect(() => {
     fetchActivity();
@@ -49,6 +50,17 @@ export default function EditActivity() {
   };
 
   const handleUpdate = async () => {
+    const missingFields = [];
+    if (!activity.name) missingFields.push('Name');
+    if (!activity.description) missingFields.push('Description');
+    if (!activity.location) missingFields.push('Location');
+    if (!activity.date_time) missingFields.push('Date & Time');
+
+    if (missingFields.length > 0) {
+      Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
+      return;
+    }
+
     try {
       await apiClient.put(`activities/${activityId}/`, activity, {
         headers: { Authorization: `Bearer ${token}` },
@@ -58,15 +70,6 @@ export default function EditActivity() {
     } catch (error) {
       Alert.alert('Error', 'Failed to update activity.');
     }
-  };
-
-  const handleConfirm = (date: Date) => {
-    setPickerVisible(false);
-    setSelectedDate(date);
-    setActivity({
-      ...activity,
-      date_time: date.toISOString(),
-    });
   };
 
   if (loading) {
@@ -100,20 +103,42 @@ export default function EditActivity() {
         onChangeText={(text) => setActivity({ ...activity, location: text })}
       />
 
-      <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-         <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
+      <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.input}>
+        <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => setPickerVisible(true)} style={styles.input}>
-         <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
+      <TouchableOpacity onPress={() => setTimePickerVisible(true)} style={styles.input}>
+        <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
       </TouchableOpacity>
 
       <DateTimePickerModal
-        isVisible={isPickerVisible}
-        mode="datetime"
+        isVisible={isDatePickerVisible}
+        mode="date"
         date={selectedDate || new Date()}
-        onConfirm={handleConfirm}
-        onCancel={() => setPickerVisible(false)}
+        onConfirm={(date) => {
+          setDatePickerVisible(false);
+          const updated = new Date(date);
+          const time = selectedDate || new Date();
+          updated.setHours(time.getHours(), time.getMinutes());
+          setSelectedDate(updated);
+          setActivity({ ...activity, date_time: updated.toISOString() });
+        }}
+        onCancel={() => setDatePickerVisible(false)}
+      />
+
+      <DateTimePickerModal
+        isVisible={isTimePickerVisible}
+        mode="time"
+        date={selectedDate || new Date()}
+        onConfirm={(time) => {
+          setTimePickerVisible(false);
+          const updated = selectedDate || new Date();
+          updated.setHours(time.getHours(), time.getMinutes());
+          const finalDate = new Date(updated);
+          setSelectedDate(finalDate);
+          setActivity({ ...activity, date_time: finalDate.toISOString() });
+        }}
+        onCancel={() => setTimePickerVisible(false)}
       />
 
       <TouchableOpacity style={styles.button} onPress={handleUpdate}>

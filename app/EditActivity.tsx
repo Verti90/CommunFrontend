@@ -13,6 +13,7 @@ import { useAuth } from '../AuthContext';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
+import { toCentralUtcISOString } from '../utils/time';
 
 export default function EditActivity() {
   const { token } = useAuth();
@@ -116,13 +117,19 @@ export default function EditActivity() {
         mode="date"
         date={selectedDate || new Date()}
         onConfirm={(date) => {
-          setDatePickerVisible(false);
-          const updated = new Date(date);
-          const time = selectedDate || new Date();
-          updated.setHours(time.getHours(), time.getMinutes());
-          setSelectedDate(updated);
-          setActivity({ ...activity, date_time: updated.toISOString() });
-        }}
+	  setDatePickerVisible(false);
+	  const time = selectedDate || new Date();
+	  const combined = new Date(
+	    date.getFullYear(),
+	    date.getMonth(),
+	    date.getDate(),
+	    time.getHours(),
+	    time.getMinutes()
+	  );
+	
+	  setSelectedDate(combined);
+	  setActivity({ ...activity, date_time: toCentralUtcISOString(combined) });
+	}}
         onCancel={() => setDatePickerVisible(false)}
       />
 
@@ -131,13 +138,19 @@ export default function EditActivity() {
         mode="time"
         date={selectedDate || new Date()}
         onConfirm={(time) => {
-          setTimePickerVisible(false);
-          const updated = selectedDate || new Date();
-          updated.setHours(time.getHours(), time.getMinutes());
-          const finalDate = new Date(updated);
-          setSelectedDate(finalDate);
-          setActivity({ ...activity, date_time: finalDate.toISOString() });
-        }}
+	  setTimePickerVisible(false);
+	  const date = selectedDate || new Date();
+	  const combined = new Date(
+	    date.getFullYear(),
+	    date.getMonth(),
+	    date.getDate(),
+	    time.getHours(),
+	    time.getMinutes()
+	  );
+	
+	  setSelectedDate(combined);
+	  setActivity({ ...activity, date_time: toCentralUtcISOString(combined) });
+	}}
         onCancel={() => setTimePickerVisible(false)}
       />
 

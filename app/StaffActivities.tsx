@@ -22,6 +22,7 @@ import {
 } from 'date-fns';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { getWeekRange, getDateForWeekdayIndex } from '../utils/time';
+import { toCentralUtcISOString } from '../utils/time';
 
 interface Activity {
   id: number;
@@ -234,28 +235,41 @@ export default function StaffActivities() {
 	  mode="date"
 	  date={selectedDate || new Date()}
 	  onConfirm={(date) => {
-	    setDatePickerVisible(false);
-	    const updated = new Date(date);
-	    const time = selectedDate || new Date();
-	    updated.setHours(time.getHours(), time.getMinutes());
-	    setSelectedDate(updated);
-	    setNewActivity((prev) => ({ ...prev, date_time: updated.toISOString() }));
-	  }}
+	  setDatePickerVisible(false);
+	  const time = selectedDate || new Date();
+	  const combined = new Date(
+	    date.getFullYear(),
+	    date.getMonth(),
+	    date.getDate(),
+	    time.getHours(),
+	    time.getMinutes()
+	  );
+
+	  setSelectedDate(combined);
+	  setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
+	}}
 	  onCancel={() => setDatePickerVisible(false)}
 	/>
 
 	  <DateTimePickerModal
-  isVisible={isTimePickerVisible}
-  mode="time"
-  date={selectedDate || new Date()}
-  onConfirm={(time) => {
-    setTimePickerVisible(false);
-    const updated = selectedDate || new Date();
-    updated.setHours(time.getHours(), time.getMinutes());
-    const finalDate = new Date(updated); // define it here
-    setSelectedDate(finalDate);
-    setNewActivity((prev) => ({ ...prev, date_time: finalDate.toISOString() }));  // ✅ now it's defined
-  }}
+	  isVisible={isTimePickerVisible}
+	  mode="time"
+	  date={selectedDate || new Date()}
+	  onConfirm={(time) => {
+	  setTimePickerVisible(false);
+	  const date = selectedDate || new Date();
+	  const combined = new Date(
+	    date.getFullYear(),
+	    date.getMonth(),
+	    date.getDate(),
+	    time.getHours(),
+	    time.getMinutes()
+	  );
+	
+	  setSelectedDate(combined);
+	  setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
+	}}
+
   onCancel={() => setTimePickerVisible(false)}
 />
 

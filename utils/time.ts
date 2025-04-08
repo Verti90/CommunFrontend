@@ -13,7 +13,21 @@ export function toCentralUtcISOString(date: Date): string {
   const centralOffset = getCentralOffsetMinutes(date);
   const localOffset = date.getTimezoneOffset();
   const offsetMs = (localOffset - centralOffset) * 60 * 1000;
-  return new Date(date.getTime() + offsetMs).toISOString();
+  const adjustedDate = new Date(date.getTime() + offsetMs);
+
+  console.log(`Original date: ${date}`);
+  console.log(`Adjusted date: ${adjustedDate}`);
+  console.log(`Day of week: ${date.getDay()}`);
+  console.log(`Hour of day: ${date.getHours()}`);
+
+  // Ensure adjustedDate does not cross into the next day for times after 7pm on Saturday
+  if (date.getDay() === 6 && date.getHours() >= 19) {
+    console.log('Adjusting for Saturday after 7pm');
+    adjustedDate.setUTCHours(adjustedDate.getUTCHours() - (localOffset / 60) + (centralOffset / 60));
+  }
+
+  console.log(`Final adjusted date: ${adjustedDate}`);
+  return adjustedDate.toISOString();
 }
 
 // Get start and end of the week (Sunday to Saturday) for a given date

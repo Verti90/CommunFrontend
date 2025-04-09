@@ -95,9 +95,13 @@ export default function StaffActivities() {
   }
 
   try {
-    await apiClient.post('activities/', newActivity, {
+    await apiClient.post('activities/', {
+      ...newActivity,
+      participants: [],  // explicitly initialize this field
+    }, {
       headers: { Authorization: `Bearer ${token}` },
     });
+
     setModalVisible(false);
     setNewActivity({ name: '', description: '', location: '', date_time: '' });
     setSelectedDate(null);

@@ -27,6 +27,7 @@ export default function EditActivity() {
     description: '',
     location: '',
     date_time: '',
+    capacity: '',
   });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
@@ -63,9 +64,13 @@ export default function EditActivity() {
     }
 
     try {
-      await apiClient.put(`activities/${activityId}/`, activity, {
+      await apiClient.put(`activities/${activityId}/`, {
+        ...activity,
+        capacity: parseInt(activity.capacity || '0', 10),
+      }, {
         headers: { Authorization: `Bearer ${token}` },
       });
+   
       Alert.alert('Success', 'Activity updated successfully!');
       navigation.goBack();
     } catch (error) {
@@ -102,6 +107,14 @@ export default function EditActivity() {
         style={styles.input}
         value={activity.location}
         onChangeText={(text) => setActivity({ ...activity, location: text })}
+      />
+
+      <TextInput
+        placeholder="Capacity (0 = unlimited)"
+        keyboardType="numeric"
+        style={styles.input}
+        value={String(activity.capacity)}
+        onChangeText={(text) => setActivity({ ...activity, capacity: text })}
       />
 
       <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.input}>

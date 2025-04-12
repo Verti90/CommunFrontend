@@ -44,6 +44,7 @@ export default function StaffActivities() {
     description: '',
     location: '',
     date_time: '',
+    capacity: '',
   });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [preFilledDate, setPreFilledDate] = useState<Date | null>(null);
@@ -97,13 +98,14 @@ export default function StaffActivities() {
   try {
     await apiClient.post('activities/', {
       ...newActivity,
+      capacity: parseInt(newActivity.capacity || '0', 10),
       participants: [],  // explicitly initialize this field
     }, {
       headers: { Authorization: `Bearer ${token}` },
     });
 
     setModalVisible(false);
-    setNewActivity({ name: '', description: '', location: '', date_time: '' });
+    setNewActivity({ name: '', description: '', location: '', date_time: '', capacity: '' });
     setSelectedDate(null);
     setPreFilledDate(null);
     setDateLocked(false);
@@ -187,6 +189,12 @@ export default function StaffActivities() {
                 <View key={activity.id} style={styles.activityCard}>
                   <Text style={styles.activityText}>{format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}</Text>
                   <Text style={styles.locationText}>📍 {activity.location}</Text>
+                  {activity.capacity > 0 && (
+                    <Text style={styles.locationText}>
+                  {activity.participants.length}/{activity.capacity} signed up
+                    </Text>
+              )}
+
                   <TouchableOpacity style={styles.deleteButton} onPress={() => deleteActivity(activity.id)}>
                     <Text style={styles.deleteText}>Delete</Text>
                   </TouchableOpacity>
@@ -217,6 +225,7 @@ export default function StaffActivities() {
           <TextInput placeholder="Name" style={styles.input} value={newActivity.name} onChangeText={(text) => setNewActivity({ ...newActivity, name: text })} />
           <TextInput placeholder="Description" style={styles.input} value={newActivity.description} onChangeText={(text) => setNewActivity({ ...newActivity, description: text })} />
           <TextInput placeholder="Location" style={styles.input} value={newActivity.location} onChangeText={(text) => setNewActivity({ ...newActivity, location: text })} />
+          <TextInput placeholder="Capacity (0 = unlimited)" keyboardType="numeric" style={styles.input} value={newActivity.capacity} onChangeText={(text) => setNewActivity({ ...newActivity, capacity: text })}/>
 
           {dateLocked ? (
             <View style={styles.input}>

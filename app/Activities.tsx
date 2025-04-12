@@ -150,6 +150,14 @@ export default function WeeklyActivities() {
                   >
                     <Text style={styles.activityText}>{format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}</Text>
                     <Text style={styles.locationText}>📍 {activity.location}</Text>
+                    {activity.capacity > 0 && (
+                    <Text style={styles.locationText}>
+                  {activity.participants.length}/{activity.capacity} signed up
+                    </Text>
+                  )}
+                  {activity.capacity > 0 && activity.participants.length >= activity.capacity && !joined && (
+                    <Text style={{ color: 'gray', marginTop: 4 }}>[FULL]</Text>
+                  )}
                     {joined ? (
                       <TouchableOpacity style={styles.cancelButton} onPress={() => handleUnregister(activity.id, activity.date_time)}>
                         <Text style={styles.cancelText}>×</Text>

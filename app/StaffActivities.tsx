@@ -185,24 +185,35 @@ export default function StaffActivities() {
             {groupedActivities[day].length === 0 ? (
               <Text style={styles.noActivity}>No activities</Text>
             ) : (
-              groupedActivities[day].map((activity) => (
-                <View key={activity.id} style={styles.activityCard}>
-                  <Text style={styles.activityText}>{format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}</Text>
-                  <Text style={styles.locationText}>📍 {activity.location}</Text>
-                  {activity.capacity > 0 && (
-                    <Text style={styles.locationText}>
-                  {activity.participants.length}/{activity.capacity} signed up
+              groupedActivities[day].map((activity) => {
+                console.log(`[Staff View] ${activity.name} | ${activity.date_time} | ${activity.participants.length}/${activity.capacity}`);
+                return (
+                  <View key={activity.id} style={styles.activityCard}>
+                    <Text style={styles.activityText}>
+                      {format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}
                     </Text>
-              )}
+                    <Text style={styles.locationText}>📍 {activity.location}</Text>
+                    {activity.capacity > 0 && (
+                      <Text style={styles.locationText}>
+                        {activity.participants.length}/{activity.capacity} signed up
+                      </Text>
+                    )}
 
-                  <TouchableOpacity style={styles.deleteButton} onPress={() => deleteActivity(activity.id)}>
-                    <Text style={styles.deleteText}>Delete</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.editButton} onPress={() => navigation.navigate('EditActivity', { activityId: activity.id })}>
-                    <Text style={styles.editText}>Edit</Text>
-                  </TouchableOpacity>
-                </View>
-              ))
+                    <TouchableOpacity
+                      style={styles.deleteButton}
+                      onPress={() => deleteActivity(activity.id)}
+                    >
+                      <Text style={styles.deleteText}>Delete</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.editButton}
+                      onPress={() => navigation.navigate('EditActivity', { activityId: activity.id })}
+                    >
+                      <Text style={styles.editText}>Edit</Text>
+                    </TouchableOpacity>
+                  </View>
+                );
+              })
             )}
             <TouchableOpacity
               style={styles.addDayButton}

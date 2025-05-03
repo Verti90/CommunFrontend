@@ -24,6 +24,7 @@ interface Activity {
   description: string;
   location: string;
   participants: number[];
+  capacity: number;
 }
 
 const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -88,7 +89,7 @@ export default function WeeklyActivities() {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Success', 'You signed up for the activity!');
-      fetchActivities(currentDate);
+      setTimeout(() => fetchActivities(currentDate), 500);
     } catch (error) {
       Alert.alert('Error', 'Unable to sign up.');
     }
@@ -100,7 +101,7 @@ export default function WeeklyActivities() {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Success', 'You unregistered from the activity.');
-      fetchActivities(currentDate);
+      setTimeout(() => fetchActivities(currentDate), 500);
     } catch (error) {
       Alert.alert('Error', 'Unable to unregister.');
     }
@@ -143,6 +144,7 @@ export default function WeeklyActivities() {
             ) : (
               groupedActivities[day].map((activity) => {
                 const joined = user?.id && activity.participants.includes(user.id);
+                console.log(`[Resident View] ${activity.name} | ${activity.date_time} | ${activity.participants.length}/${activity.capacity}`);
                 return (
                   <View
                     key={`${activity.id}-${activity.date_time}`}

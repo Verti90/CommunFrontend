@@ -222,6 +222,7 @@ export default function StaffActivities() {
                 setPreFilledDate(new Date(dayDate));
                 setDateLocked(true);
                 setModalVisible(true);
+                setSelectedDate(new Date(dayDate));
               }}
             >
               <Text style={styles.addDayButtonText}>+ Add Activity</Text>
@@ -238,21 +239,25 @@ export default function StaffActivities() {
           <TextInput placeholder="Location" style={styles.input} value={newActivity.location} onChangeText={(text) => setNewActivity({ ...newActivity, location: text })} />
           <TextInput placeholder="Capacity (0 = unlimited)" keyboardType="numeric" style={styles.input} value={newActivity.capacity} onChangeText={(text) => setNewActivity({ ...newActivity, capacity: text })}/>
 
-          {dateLocked ? (
-            <View style={styles.input}>
-              <Text>{preFilledDate ? format(preFilledDate, 'yyyy-MM-dd') : ''}</Text>
-            </View>
-          ) : (
-           <>
-	    <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.input}>
-	      <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
-	    </TouchableOpacity>
-
-	    <TouchableOpacity onPress={() => setTimePickerVisible(true)} style={styles.input}>
-	      <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
-	    </TouchableOpacity>
-	  </>
-	  )}
+              {dateLocked ? (
+      <>
+        <View style={styles.input}>
+          <Text>{preFilledDate ? format(preFilledDate, 'yyyy-MM-dd') : ''}</Text>
+        </View>
+        <TouchableOpacity onPress={() => setTimePickerVisible(true)} style={styles.input}>
+          <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
+        </TouchableOpacity>
+      </>
+    ) : (
+      <>
+        <TouchableOpacity onPress={() => setDatePickerVisible(true)} style={styles.input}>
+          <Text>{selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'Select Date'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setTimePickerVisible(true)} style={styles.input}>
+          <Text>{selectedDate ? format(selectedDate, 'hh:mm a') : 'Select Time'}</Text>
+        </TouchableOpacity>
+      </>
+    )}
 
           <DateTimePickerModal
 	  isVisible={isDatePickerVisible}

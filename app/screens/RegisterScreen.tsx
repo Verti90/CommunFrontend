@@ -13,8 +13,9 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import apiClient from '../../services/api';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -26,7 +27,7 @@ const RegisterScreen = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const navigation = useNavigation();
+  const router = useRouter();
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -51,7 +52,7 @@ const RegisterScreen = () => {
         last_name: lastName,
       });
       Alert.alert('Registration Successful', 'You can now log in');
-      navigation.navigate('Login');
+      router.push('/screens/LoginScreen');
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response) {
@@ -147,11 +148,11 @@ const RegisterScreen = () => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.loginText}>Already have an account? Login</Text>
-            </TouchableOpacity>
+            style={styles.loginButton}
+            onPress={() => router.push('/screens/LoginScreen')}
+          >
+            <Text style={styles.loginText}>Already have an account? Login</Text>
+          </TouchableOpacity>
           </Animated.View>
         </View>
       </ScrollView>

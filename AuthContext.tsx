@@ -7,6 +7,7 @@ type User = {
   username: string;
   email: string;
   id?: number;
+  is_staff: boolean;
 };
 
 type AuthContextType = {

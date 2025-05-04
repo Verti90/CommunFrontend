@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
-import apiClient from '../services/api';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 import { useRouter } from 'expo-router';
 
 interface Meal {

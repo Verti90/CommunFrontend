@@ -8,18 +8,17 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import apiClient from '../services/api';
-import { useAuth } from '../AuthContext';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
 import { toCentralUtcISOString } from '../utils/time';
 
 export default function EditActivity() {
   const { token } = useAuth();
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { activityId } = route.params as { activityId: number };
+  const { activityId } = useLocalSearchParams<{ activityId: string }>();
+  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [activity, setActivity] = useState({
@@ -39,7 +38,7 @@ export default function EditActivity() {
 
   const fetchActivity = async () => {
     try {
-      const response = await apiClient.get(`activities/${activityId}/`, {
+      const response = await apiClient.get(`activities/${Number(activityId)}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setActivity(response.data);
@@ -64,7 +63,7 @@ export default function EditActivity() {
     }
 
     try {
-      await apiClient.put(`activities/${activityId}/`, {
+      await apiClient.put(`activities/${Number(activityId)}/`, {
         ...activity,
         capacity: parseInt(activity.capacity || '0', 10),
       }, {
@@ -72,7 +71,7 @@ export default function EditActivity() {
       });
    
       Alert.alert('Success', 'Activity updated successfully!');
-      navigation.goBack();
+      router.back();
     } catch (error) {
       Alert.alert('Error', 'Failed to update activity.');
     }

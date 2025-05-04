@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { MaterialIcons } from '@expo/vector-icons';
-import apiClient, { API_BASE_URL } from '../services/api';
-import { useAuth } from '../AuthContext';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 
 const MaintenanceScreen = () => {
     const [requests, setRequests] = useState([]);

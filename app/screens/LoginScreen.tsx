@@ -11,12 +11,13 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../AuthContext';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 
 const LoginScreen = () => {
   const { width } = useWindowDimensions();
-  const navigation = useNavigation();
+  const router = useRouter();
   const { login } = useAuth();
 
   const [username, setUsername] = useState('');
@@ -57,7 +58,7 @@ const LoginScreen = () => {
   };
 
     const handleRegister = () => {
-      navigation.navigate('Register');
+      router.push('/screens/RegisterScreen');
   };
 
   return (

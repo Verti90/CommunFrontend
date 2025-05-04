@@ -1,13 +1,12 @@
-import React from 'react';
-import { AuthProvider } from '../AuthContext'; // Adjusted the import path
-import RootLayoutNav from './RootLayoutNav';
+import { Stack } from 'expo-router';
+import { AuthProvider } from '../AuthContext';
 
-const Layout = () => {
+export default function Layout() {
   return (
     <AuthProvider>
-      <RootLayoutNav />
+      <Stack />
     </AuthProvider>
   );
-};
+}
 
 export default Layout;

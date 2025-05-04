@@ -9,9 +9,9 @@ import {
   TextInput,
   Modal,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import apiClient from '../services/api';
-import { useAuth } from '../AuthContext';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 import {
   format,
   addDays,
@@ -51,7 +51,7 @@ export default function StaffActivities() {
   const [dateLocked, setDateLocked] = useState(false);
 
   const { token } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
 
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [isTimePickerVisible, setTimePickerVisible] = useState(false);
@@ -207,7 +207,10 @@ export default function StaffActivities() {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.editButton}
-                      onPress={() => navigation.navigate('EditActivity', { activityId: activity.id })}
+                      onPress={() => router.push({
+                        pathname: '/EditActivity',
+                        params: { activityId: activity.id.toString() },
+                      })}
                     >
                       <Text style={styles.editText}>Edit</Text>
                     </TouchableOpacity>

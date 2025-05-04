@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
-import { useAuth } from '../../AuthContext';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 
 export default function MealSelectionScreen() {
   const [mainItem, setMainItem] = useState('');
@@ -16,7 +17,7 @@ export default function MealSelectionScreen() {
 
   const [profile, setProfile] = useState<any>({});
   const { token } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
   const params = useLocalSearchParams();
   const passedMealTime = typeof params.mealTime === 'string' ? params.mealTime : 'Breakfast';
   
@@ -65,7 +66,7 @@ export default function MealSelectionScreen() {
       });
 
       Alert.alert('Success', 'Meal selection submitted.');
-      navigation.goBack();
+      router.back();
     } catch (err) {
       Alert.alert('Error', 'Submission failed.');
     }

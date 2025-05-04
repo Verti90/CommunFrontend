@@ -1,11 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../AuthContext';
-import apiClient from '../services/api';
+import { router } from 'expo-router';
+import { useAuth } from '@auth';
+import apiClient from '@services/api';
 
 export default function HomeScreen() {
-  const navigation = useNavigation();
   const { token, user } = useAuth();
   const [fullName, setFullName] = useState('Resident');
 
@@ -28,12 +27,19 @@ export default function HomeScreen() {
   }, [token]);
 
   const icons = [
-    ...(user?.role === 'staff' ? [{ name: 'Admin', source: require('../assets/images/Admin.jpg') }] : []),
-    { name: 'Dining', source: require('../assets/images/Dining.jpg') },
-    { name: 'Activities', source: require('../assets/images/Activities.jpg') },
-    { name: 'Maintenance', source: require('../assets/images/Maintenance.jpg') },
-    { name: 'Transportation', source: require('../assets/images/Transportation.jpg') },
-    { name: 'Wellness', source: require('../assets/images/Wellness.jpg') },
+    ...(user?.role === 'staff'
+      ? [
+          { name: 'Admin', source: require('@assets/images/Admin.jpg') },
+          { name: 'ManageMenus', source: require('@assets/images/icon-manage-menus.png') },
+        ]
+      : []),
+    ...(user?.role !== 'staff'
+      ? [{ name: 'Dining', source: require('@assets/images/Dining.jpg') }]
+      : []),
+    { name: 'Activities', source: require('@assets/images/Activities.jpg') },
+    { name: 'Maintenance', source: require('@assets/images/Maintenance.jpg') },
+    { name: 'Transportation', source: require('@assets/images/Transportation.jpg') },
+    { name: 'Wellness', source: require('@assets/images/Wellness.jpg') },
   ];
 
   return (
@@ -41,16 +47,18 @@ export default function HomeScreen() {
       <Text style={styles.welcome}>Welcome, {fullName}!</Text>
       <Text style={styles.title}>Aravah Senior Living</Text>
       <View style={styles.iconContainer}>
-        {icons.map((icon) => (
-          <TouchableOpacity
-            key={icon.name}
-            style={styles.iconButton}
-            onPress={() => navigation.navigate('More', { screen: icon.name })}
-          >
-            <Image source={icon.source} style={styles.iconImage} />
-            <Text>{icon.name}</Text>
-          </TouchableOpacity>
-        ))}
+      {icons.map((icon) => (
+    <TouchableOpacity
+      key={icon.name}
+      style={styles.iconButton}
+      onPress={() => {
+        router.push(`/${icon.name === 'ManageMenus' ? 'AddDailyMenuScreen' : icon.name}`);
+      }}
+    >
+      <Image source={icon.source} style={styles.iconImage} />
+      <Text>{icon.name === 'ManageMenus' ? 'Manage Menus' : icon.name}</Text>
+    </TouchableOpacity>
+  ))}
       </View>
     </ScrollView>
   );
@@ -68,7 +76,7 @@ const styles = StyleSheet.create({
   iconContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center'
+    justifyContent: 'center',
   },
   iconButton: {
     width: '40%',
@@ -77,9 +85,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 15,
-    elevation: 3
+    elevation: 3,
   },
   iconImage: {
-    width: 50, height: 50, resizeMode: 'contain', marginBottom: 10
+    width: 50,
+    height: 50,
+    resizeMode: 'contain',
+    marginBottom: 10,
   },
 });

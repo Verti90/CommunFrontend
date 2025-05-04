@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import apiClient from '../services/api';
 import { useAuth } from '../AuthContext';
+import { useRouter } from 'expo-router';
 
 interface Meal {
   id: number;
@@ -11,6 +12,7 @@ interface Meal {
 }
 
 export default function Dining() {
+  const router = useRouter();
   const [meals, setMeals] = useState<Meal[]>([]);
   const { token, logout } = useAuth();
 
@@ -59,9 +61,18 @@ export default function Dining() {
             {meal.items.map((item, index) => (
               <Text key={index} style={styles.itemText}>{item}</Text>
             ))}
-            <TouchableOpacity style={styles.selectionButton}>
-              <Text style={styles.buttonText}>Make Selections →</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.selectionButton}
+            onPress={() => router.push({
+              pathname: '/screens/MealSelectionScreen',
+              params: {
+                mealTime: meal.meal_type,
+                items: JSON.stringify(meal.items)
+              }
+            })}        
+          >
+            <Text style={styles.buttonText}>Make Selections →</Text>
+          </TouchableOpacity>
           </View>
         </View>
       ))}

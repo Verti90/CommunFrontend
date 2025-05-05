@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import api from '@services/api';
+import { InteractionManager } from 'react-native';
 
 type User = {
   username: string;
@@ -35,7 +36,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedRefreshToken = await AsyncStorage.getItem('@Auth:refreshToken');
   
         if (storedUser && storedToken && storedRefreshToken) {
-          setUser(JSON.parse(storedUser));
+          try {
+            const parsedUser = JSON.parse(storedUser);
+            setUser(parsedUser);
+          } catch (e) {
+            console.warn('⚠️ Could not parse stored user:', e);
+            await AsyncStorage.removeItem('@Auth:user');
+            setUser(null);
+          }
+        
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
           api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
@@ -45,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(null);
         }
   
-        // ✅ Valid log location
         console.log('✅ Final loaded values:', {
           token: storedToken,
           refreshToken: storedRefreshToken,
@@ -93,9 +101,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setRefreshToken(null);
     setUser(null);
     setToken(null);
-
-    console.log('🚪 Logged out, navigating to Login');
-    router.replace('/login');
+  
+    console.log('🚪 Logged out, waiting to redirect...');
+  
+    InteractionManager.runAfterInteractions(() => {
+      console.log('✅ Redirecting to /login');
+      router.replace('/login');
+    });
   };
 
   return (

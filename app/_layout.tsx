@@ -1,18 +1,18 @@
 import { Stack, router } from 'expo-router';
-import { AuthProvider, useAuth } from '../AuthContext';
-import { View, Text, ActivityIndicator, useEffect } from 'react-native';
+import { AuthProvider, useAuth } from '@auth';
+import { useEffect } from 'react';
+import { View, Text, ActivityIndicator } from 'react-native';
 
 function InnerLayout() {
   const { loading, token } = useAuth();
 
   useEffect(() => {
-    if (!loading && !token) {
-      console.log('🔁 No token — redirecting to /login');
+    if (!loading && (!token || typeof token !== 'string')) {
       router.replace('/login');
     }
   }, [loading, token]);
 
-  if (loading || (!token && typeof token !== 'string')) {
+  if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <ActivityIndicator size="large" />
@@ -30,6 +30,7 @@ function InnerLayout() {
     >
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="login" />
+      <Stack.Screen name="register" />
     </Stack>
   );
 }

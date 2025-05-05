@@ -52,7 +52,7 @@ const RegisterScreen = () => {
         last_name: lastName,
       });
       Alert.alert('Registration Successful', 'You can now log in');
-      router.push('/screens/LoginScreen');
+      router.push('/login');
     } catch (error) {
       console.error('Registration error:', error);
       if (error.response) {
@@ -149,7 +149,7 @@ const RegisterScreen = () => {
 
             <TouchableOpacity
             style={styles.loginButton}
-            onPress={() => router.push('/screens/LoginScreen')}
+            onPress={() => router.push('/login')}
           >
             <Text style={styles.loginText}>Already have an account? Login</Text>
           </TouchableOpacity>

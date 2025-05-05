@@ -12,12 +12,12 @@ export default function AddDailyMenuScreen() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!user?.is_staff) {
+    if (user?.role !== 'staff') {
       Alert.alert('Access Denied', 'You are not authorized to access this screen.');
       router.back();
     }
-  }, []);
-
+  }, [user]);
+  
   const today = new Date().toISOString().split('T')[0];
 
   const [mealType, setMealType] = useState('Breakfast');

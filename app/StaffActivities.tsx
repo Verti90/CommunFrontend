@@ -158,7 +158,7 @@ export default function StaffActivities() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Staff Activity Manager</Text>
+      <Text style={styles.title}>Manage Activities</Text>
       <TouchableOpacity style={styles.addButton} onPress={() => {
         setModalVisible(true);
         setDateLocked(false);

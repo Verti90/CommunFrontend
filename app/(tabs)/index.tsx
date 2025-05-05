@@ -36,7 +36,11 @@ export default function HomeScreen() {
     ...(user?.role !== 'staff'
       ? [{ name: 'Dining', source: require('@assets/images/Dining.jpg') }]
       : []),
-    { name: 'Activities', source: require('@assets/images/Activities.jpg') },
+      {
+        name: 'Activities',
+        source: require('@assets/images/Activities.jpg'),
+        route: user?.role === 'staff' ? 'StaffActivities' : 'Activities',
+      },
     { name: 'Maintenance', source: require('@assets/images/Maintenance.jpg') },
     { name: 'Transportation', source: require('@assets/images/Transportation.jpg') },
     { name: 'Wellness', source: require('@assets/images/Wellness.jpg') },
@@ -52,11 +56,18 @@ export default function HomeScreen() {
       key={icon.name}
       style={styles.iconButton}
       onPress={() => {
-        router.push(`/${icon.name === 'ManageMenus' ? 'AddDailyMenuScreen' : icon.name}`);
-      }}
+        const routeName = icon.route || (icon.name === 'ManageMenus' ? 'AddDailyMenuScreen' : icon.name);
+        router.push(`/${routeName}`);
+      }}    
     >
       <Image source={icon.source} style={styles.iconImage} />
-      <Text>{icon.name === 'ManageMenus' ? 'Manage Menus' : icon.name}</Text>
+      <Text>
+  {icon.name === 'ManageMenus'
+    ? 'Manage Menus'
+    : icon.name === 'Activities' && user?.role === 'staff'
+    ? 'Manage Activities'
+    : icon.name}
+</Text>
     </TouchableOpacity>
   ))}
       </View>

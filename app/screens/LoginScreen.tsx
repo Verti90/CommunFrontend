@@ -19,6 +19,14 @@ const LoginScreen = () => {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { login } = useAuth();
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (token) {
+      console.log('✅ Already logged in — redirecting to /');
+      router.replace('/');
+    }
+  }, [token]);
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

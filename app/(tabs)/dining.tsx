@@ -61,16 +61,18 @@ export default function Dining() {
             {meal.items.map((item, index) => (
               <Text key={index} style={styles.itemText}>{item}</Text>
             ))}
-          <TouchableOpacity
-            style={styles.selectionButton}
-            onPress={() => router.push({
-              pathname: '/screens/MealSelectionScreen',
-              params: {
-                mealTime: meal.meal_type,
-                items: JSON.stringify(meal.items)
+            <TouchableOpacity
+              style={styles.selectionButton}
+              onPress={() =>
+                router.push({
+                  pathname: '/meal-selection',
+                  params: {
+                    mealTime: meal.meal_type,
+                    items: JSON.stringify(meal.items),
+                  },
+                })
               }
-            })}        
-          >
+            >
             <Text style={styles.buttonText}>Make Selections →</Text>
           </TouchableOpacity>
           </View>

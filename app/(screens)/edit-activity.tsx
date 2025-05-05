@@ -13,7 +13,7 @@ import apiClient from '@services/api';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
-import { toCentralUtcISOString } from '../utils/time';
+import { toCentralUtcISOString } from '@utils/time';
 
 export default function EditActivity() {
   const { token } = useAuth();

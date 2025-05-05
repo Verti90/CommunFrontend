@@ -1,2 +1,2 @@
-import RegisterScreen from './screens/RegisterScreen';
+import RegisterScreen from './(screens)/register-screen.tsx';
 export default RegisterScreen;

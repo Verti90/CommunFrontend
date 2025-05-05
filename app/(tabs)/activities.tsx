@@ -7,15 +7,17 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import apiClient from '../services/api';
-import { useAuth } from '../AuthContext';
+
+import apiClient from '@services/api';
+import { useAuth } from '@auth';
+import { getWeekRange } from '@utils/time';
+
 import {
   format,
   addDays,
   addMonths,
   parseISO,
 } from 'date-fns';
-import { getWeekRange } from '../utils/time';
 
 interface Activity {
   id: number;

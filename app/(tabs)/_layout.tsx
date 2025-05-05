@@ -28,6 +28,15 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hide the rest explicitly */}
+      <Tabs.Screen name="manage-menus" options={{ href: null }} />
+      <Tabs.Screen name="admin" options={{ href: null }} />
+      <Tabs.Screen name="manage-activities" options={{ href: null }} />
+      <Tabs.Screen name="dining" options={{ href: null }} />
+      <Tabs.Screen name="activities" options={{ href: null }} />
+      <Tabs.Screen name="maintenance" options={{ href: null }} />
+      <Tabs.Screen name="transportation" options={{ href: null }} />
+      <Tabs.Screen name="wellness" options={{ href: null }} />
     </Tabs>
   );
 }

@@ -50,8 +50,7 @@ export default function AddDailyMenuScreen() {
 
   return (
     <ScrollView className="bg-green-100 flex-1 px-4 py-6">
-      <Text className="text-2xl font-bold text-center mb-4">Create Daily Menu</Text>
-
+      <Text className="text-2xl font-bold text-center mb-4">Manage Menus</Text>
       <View className="bg-white rounded-2xl p-4 mb-4 shadow">
         <Text className="font-semibold mb-2">Meal Type</Text>
         {mealOptions.map((option) => (

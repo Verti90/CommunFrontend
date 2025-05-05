@@ -21,8 +21,8 @@ import {
   parseISO,
 } from 'date-fns';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { getWeekRange, getDateForWeekdayIndex } from '../utils/time';
-import { toCentralUtcISOString } from '../utils/time';
+import { getWeekRange, getDateForWeekdayIndex } from '@utils/time';
+import { toCentralUtcISOString } from '@utils/time';
 
 interface Activity {
   id: number;
@@ -206,14 +206,16 @@ export default function StaffActivities() {
                       <Text style={styles.deleteText}>Delete</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={() => router.push({
-                        pathname: '/EditActivity',
+                    style={styles.editButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/edit-activity',
                         params: { activityId: activity.id.toString() },
-                      })}
-                    >
-                      <Text style={styles.editText}>Edit</Text>
-                    </TouchableOpacity>
+                      })
+                    }
+                  >
+                    <Text style={styles.editText}>Edit</Text>
+                  </TouchableOpacity>
                   </View>
                 );
               })

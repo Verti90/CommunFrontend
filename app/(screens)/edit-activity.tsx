@@ -96,12 +96,6 @@ export default function EditActivity() {
         onChangeText={(text) => setActivity({ ...activity, name: text })}
       />
       <TextInput
-        placeholder="Description"
-        style={styles.input}
-        value={activity.description}
-        onChangeText={(text) => setActivity({ ...activity, description: text })}
-      />
-      <TextInput
         placeholder="Location"
         style={styles.input}
         value={activity.location}

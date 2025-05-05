@@ -86,7 +86,6 @@ export default function StaffActivities() {
   const addActivity = async () => {
   const missingFields = [];
   if (!newActivity.name) missingFields.push('Name');
-  if (!newActivity.description) missingFields.push('Description');
   if (!newActivity.location) missingFields.push('Location');
   if (!newActivity.date_time) missingFields.push('Date & Time');
 
@@ -240,7 +239,6 @@ export default function StaffActivities() {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>New Activity</Text>
           <TextInput placeholder="Name" style={styles.input} value={newActivity.name} onChangeText={(text) => setNewActivity({ ...newActivity, name: text })} />
-          <TextInput placeholder="Description" style={styles.input} value={newActivity.description} onChangeText={(text) => setNewActivity({ ...newActivity, description: text })} />
           <TextInput placeholder="Location" style={styles.input} value={newActivity.location} onChangeText={(text) => setNewActivity({ ...newActivity, location: text })} />
           <TextInput placeholder="Capacity (0 = unlimited)" keyboardType="numeric" style={styles.input} value={newActivity.capacity} onChangeText={(text) => setNewActivity({ ...newActivity, capacity: text })}/>
 
@@ -324,7 +322,7 @@ export default function StaffActivities() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: '#f3f0e9' },
+  container: { padding: 10, backgroundColor: '#f0f0e5' },
   title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
   addButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 10, marginBottom: 10 },
   addButtonText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },

@@ -66,17 +66,17 @@ export default function AddDailyMenuScreen() {
         data: { item_index: itemIndex },
         headers: { Authorization: `Bearer ${token}` },
       });
-      await fetchMenusForDate();
     } catch (err) {
-      console.error('Delete failed:', err);
-  
       if (err?.response?.status === 404) {
-        await fetchMenusForDate();
+        console.warn('Menu not found; it may have already been deleted.');
       } else {
+        console.error('Delete failed:', err);
         Alert.alert('Error', 'Could not delete menu item.');
       }
+    } finally {
+      fetchMenusForDate();
     }
-  };
+  };  
 
   const handleSubmit = async () => {
     const itemsArray = itemsText

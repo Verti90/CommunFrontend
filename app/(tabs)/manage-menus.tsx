@@ -104,7 +104,6 @@ export default function AddDailyMenuScreen() {
       Alert.alert('Success', 'Daily menu created successfully.');
       setItemsText('');
       setMealType('Breakfast');
-      setDate(new Date());
       fetchMenusForDate();
     } catch (err) {
       console.error(err);
@@ -168,7 +167,9 @@ export default function AddDailyMenuScreen() {
         }}
         onCancel={() => setDatePickerVisible(false)}
       />
-
+      <Text style={{ textAlign: 'center', fontSize: 16, marginTop: 20 }}>
+        Showing menus for: {date.toISOString().split('T')[0]}
+      </Text>
       <View style={{ marginTop: 30 }}>
         {mealOptions.map((type) => (
           <View key={type} style={{ marginBottom: 20 }}>

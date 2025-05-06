@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'rea
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import { useRouter } from 'expo-router';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 interface Meal {
   id: number;
@@ -11,49 +12,81 @@ interface Meal {
   items: string[];
 }
 
+interface MealSelection {
+  id: number;
+  meal_time: string;
+  main_item: string;
+  protein: string;
+  drinks: string[];
+  guest_name: string;
+  guest_meal: string;
+  allergies: string[];
+  room_service: boolean;
+  created_at: string;
+}
+
 export default function Dining() {
   const router = useRouter();
   const [meals, setMeals] = useState<Meal[]>([]);
   const { token, logout } = useAuth();
+  const [upcomingSelections, setUpcomingSelections] = useState<MealSelection[]>([]);
+  const fetchUpcomingMeals = async () => {
+    try {
+      const response = await apiClient.get('meals/upcoming/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUpcomingSelections(response.data);
+    } catch (error) {
+      console.error('Error fetching upcoming meals:', error);
+    }
+  };  
+
+  const [date, setDate] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const fetchMeals = async (selectedDate: Date) => {
+    try {
+      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const response = await apiClient.get('meals/', {
+        params: { date: formattedDate },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMeals(response.data);
+    } catch (error) {
+      console.error('Error fetching meals:', error);
+      if (error.response?.status === 401) {
+        Alert.alert("Session Expired", "Your session has expired, please log back in.", [
+          { text: "OK", onPress: () => logout() }
+        ]);
+      }
+    }
+  };
 
   useEffect(() => {
-    const fetchMeals = async () => {
-      try {
-        const response = await apiClient.get('meals/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        console.log("Fetch meals response:", response.data);
-        setMeals(response.data);
-      } catch (error) {
-        console.error('Error fetching meals:', error);
-        if (error.response && error.response.status === 401) {
-          // Handle token expiration or invalid token
-          Alert.alert(
-            "Session Expired",
-            "Your session has expired, please log back in.",
-            [
-              {
-                text: "OK",
-                onPress: () => {
-                  logout();
-                }
-              }
-            ]
-          );
-        } else {
-          console.error('Response data:', error.response?.data); // Log response data
-          console.error('Response status:', error.response?.status); // Log response status
-        }
-      }
-    };
-
-    fetchMeals();
-  }, [token, logout]);
+    fetchMeals(date);
+    fetchUpcomingMeals();
+  }, [token, logout, date]);
 
   return (
     <ScrollView style={styles.container}>
+      <TouchableOpacity
+        onPress={() => setShowDatePicker(true)}
+        style={styles.dateButton}
+      >
+        <Text style={styles.dateText}>Meals for {date.toISOString().split('T')[0]} (Tap to change)</Text>
+      </TouchableOpacity>
+
+      <DateTimePickerModal
+        isVisible={showDatePicker}
+        mode="date"
+        date={date}
+        onConfirm={(selected) => {
+          setDate(selected);
+          setShowDatePicker(false);
+        }}
+        onCancel={() => setShowDatePicker(false)}
+      />
+
       {meals.map((meal) => (
         <View key={meal.id} style={styles.mealContainer}>
           <Text style={styles.mealType}>{meal.meal_type}</Text>
@@ -73,13 +106,39 @@ export default function Dining() {
                 })
               }
             >
-            <Text style={styles.buttonText}>Make Selections →</Text>
-          </TouchableOpacity>
+              <Text style={styles.buttonText}>Make Selections →</Text>
+            </TouchableOpacity>
           </View>
         </View>
       ))}
 
-      <TouchableOpacity>
+{upcomingSelections.length > 0 && (
+  <View style={{ marginTop: 30 }}>
+    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
+      Your Upcoming Meal Selections
+    </Text>
+    {upcomingSelections.map((sel) => (
+      <View key={sel.id} style={{
+        backgroundColor: '#E3EAD9',
+        borderRadius: 12,
+        padding: 10,
+        marginBottom: 10
+      }}>
+        <Text style={{ fontWeight: 'bold' }}>{sel.meal_time} – {new Date(sel.created_at).toLocaleDateString()}</Text>
+        <Text>Main: {sel.main_item}</Text>
+        <Text>Protein: {sel.protein}</Text>
+        <Text>Drinks: {sel.drinks?.join(', ')}</Text>
+        {sel.guest_name ? <Text>Guest: {sel.guest_name} — {sel.guest_meal}</Text> : null}
+        {sel.room_service ? <Text>🛎️ Room Service</Text> : null}
+      </View>
+    ))}
+  </View>
+)}
+
+      <TouchableOpacity onPress={() => Alert.alert(
+        'Always Available Menu',
+        'Toast\nCereal\nYogurt\nCoffee\nTea\nWater'
+      )}>
         <Text style={styles.viewMenu}>View always available menu</Text>
       </TouchableOpacity>
     </ScrollView>
@@ -91,6 +150,18 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F3E7',
     padding: 15,
+  },
+  dateButton: {
+    backgroundColor: '#ccc',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  dateText: {
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
   mealContainer: {
     marginBottom: 20,

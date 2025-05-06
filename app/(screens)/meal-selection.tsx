@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  StyleSheet,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import axios from 'axios';
 import { useAuth } from '@auth';
@@ -12,37 +20,40 @@ export default function MealSelectionScreen() {
   const [guestName, setGuestName] = useState('');
   const [guestMeal, setGuestMeal] = useState('');
   const [allergies, setAllergies] = useState<string[]>([]);
-  const [profile, setProfile] = useState<any>({});
   const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState<any>({});
 
   const { token } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const passedMealTime = typeof params.mealTime === 'string' ? params.mealTime : 'Breakfast';
+  const passedMealTime =
+    typeof params.mealTime === 'string' ? params.mealTime : 'Breakfast';
 
   const parsedItems = Array.isArray(params.items)
     ? params.items
     : typeof params.items === 'string'
-      ? JSON.parse(params.items)
-      : [];
+    ? JSON.parse(params.items)
+    : [];
 
   const [mealTime, setMealTime] = useState(passedMealTime);
 
   useEffect(() => {
-    axios.get('/api/profile/preferences/', {
-      headers: { Authorization: `Bearer ${token}` }
-    }).then(res => {
-      setProfile(res.data);
-      setGuestName(res.data.default_guest_name || '');
-      setGuestMeal(res.data.default_guest_meal || '');
-      setAllergies(res.data.default_allergies || []);
-    });
+    axios
+      .get('/api/profile/preferences/', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then((res) => {
+        setProfile(res.data);
+        setGuestName(res.data.default_guest_name || '');
+        setGuestMeal(res.data.default_guest_meal || '');
+        setAllergies(res.data.default_allergies || []);
+      });
   }, []);
 
   const toggleDrink = (item: string) => {
-    setDrinks(prev => {
+    setDrinks((prev) => {
       if (prev.includes(item)) {
-        return prev.filter(d => d !== item);
+        return prev.filter((d) => d !== item);
       } else if (prev.length < 2) {
         return [...prev, item];
       } else {
@@ -54,26 +65,33 @@ export default function MealSelectionScreen() {
 
   const submit = async () => {
     if (!mainItem || !protein || drinks.length === 0) {
-      return Alert.alert('Missing fields', 'Please complete all required selections.');
+      return Alert.alert(
+        'Missing fields',
+        'Please complete all required selections.'
+      );
     }
 
     setLoading(true);
     try {
-      await axios.post('/api/meals/', {
-        meal_time: mealTime,
-        main_item: mainItem,
-        protein,
-        drinks,
-        room_service: roomService,
-        guest_name: guestName,
-        guest_meal: guestMeal,
-        allergies,
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        '/api/meals/',
+        {
+          meal_time: mealTime,
+          main_item: mainItem,
+          protein,
+          drinks,
+          room_service: roomService,
+          guest_name: guestName,
+          guest_meal: guestMeal,
+          allergies,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       Alert.alert('Success', 'Meal selection submitted.', [
-        { text: 'OK', onPress: () => router.replace('/dining') }
+        { text: 'OK', onPress: () => router.replace('/dining') },
       ]);
     } catch (err) {
       Alert.alert('Error', 'Submission failed.');
@@ -83,30 +101,36 @@ export default function MealSelectionScreen() {
   };
 
   return (
-    <ScrollView className="bg-green-100 flex-1 px-4 py-6">
-      <Text className="text-2xl font-bold text-center mb-4">{mealTime} Selection</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>{mealTime} Selection</Text>
 
-      {/* Main Course */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">
-          Main Course <Text className="text-red-600">*</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>
+          Main Course <Text style={styles.required}>*</Text>
         </Text>
         <TextInput
           placeholder="e.g., Eggs, Pancakes"
           value={mainItem}
           onChangeText={setMainItem}
-          className="border p-2 rounded mb-2"
+          style={styles.input}
         />
+
         {parsedItems.length > 0 && (
           <>
-            <Text className="text-sm text-gray-500 mb-1">Quick picks:</Text>
-            {parsedItems.map((item: string, index: number) => (
-              <TouchableOpacity key={index} onPress={() => setMainItem(item)} className="py-1">
-                <Text className="text-blue-600 underline">{item}</Text>
-              </TouchableOpacity>
-            ))}
-            {parsedItems.some(i => allergies.includes(i)) && (
-              <Text className="text-red-600 text-xs mt-1">
+            <Text style={styles.hint}>Quick picks:</Text>
+            <View style={styles.pillContainer}>
+              {parsedItems.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => setMainItem(item)}
+                  style={styles.pill}
+                >
+                  <Text style={styles.pillText}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {parsedItems.some((i) => allergies.includes(i)) && (
+              <Text style={styles.warning}>
                 ⚠ Some items may contain your allergies
               </Text>
             )}
@@ -114,71 +138,188 @@ export default function MealSelectionScreen() {
         )}
       </View>
 
-      {/* Protein */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">
-          Protein <Text className="text-red-600">*</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>
+          Protein <Text style={styles.required}>*</Text>
         </Text>
         <TextInput
           placeholder="e.g., Bacon, Ham"
           value={protein}
           onChangeText={setProtein}
-          className="border p-2 rounded"
+          style={styles.input}
         />
       </View>
 
-      {/* Drinks */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">
-          Drinks (Choose up to 2) <Text className="text-red-600">*</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>
+          Drinks (Choose up to 2) <Text style={styles.required}>*</Text>
         </Text>
-        {['Coffee', 'OJ', 'Milk', 'Tea'].map(d => (
-          <TouchableOpacity key={d} onPress={() => toggleDrink(d)} className="py-1">
-            <Text className={drinks.includes(d) ? 'font-bold text-green-700 text-lg' : 'text-lg'}>
+        {['Coffee', 'OJ', 'Milk', 'Tea'].map((d) => (
+          <TouchableOpacity
+            key={d}
+            onPress={() => toggleDrink(d)}
+            style={{ paddingVertical: 6 }}
+          >
+            <Text style={drinks.includes(d) ? styles.selectedDrink : styles.drink}>
               {drinks.includes(d) ? '☑' : '☐'} {d}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
 
-      {/* Room Service */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">Room Service?</Text>
-        <TouchableOpacity onPress={() => setRoomService(!roomService)} className="py-2">
-          <Text>{roomService ? '✅ Yes' : '❌ No'}</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Room Service?</Text>
+        <TouchableOpacity onPress={() => setRoomService(!roomService)}>
+          <Text style={styles.roomServiceText}>
+            {roomService ? '✅ Yes' : '❌ No'}
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Guest Info */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">Guest Name (optional)</Text>
-        <TextInput value={guestName} onChangeText={setGuestName} className="border p-2 rounded" />
-
-        <Text className="text-xl font-bold mt-4 mb-2">Guest Meal</Text>
-        <TextInput value={guestMeal} onChangeText={setGuestMeal} className="border p-2 rounded" />
-      </View>
-
-      {/* Allergies */}
-      <View className="bg-white rounded-2xl p-4 mb-4 shadow">
-        <Text className="text-xl font-bold mb-2">Allergies</Text>
+      <View style={styles.card}>
+        <Text style={styles.label}>Guest Name (optional)</Text>
         <TextInput
-          placeholder="comma-separated (e.g., peanuts, gluten)"
-          value={allergies.join(', ')}
-          onChangeText={(val) => setAllergies(val.split(',').map(s => s.trim()))}
-          className="border p-2 rounded"
+          value={guestName}
+          onChangeText={setGuestName}
+          style={styles.input}
+        />
+
+        <Text style={[styles.label, { marginTop: 16 }]}>Guest Meal</Text>
+        <TextInput
+          value={guestMeal}
+          onChangeText={setGuestMeal}
+          style={styles.input}
         />
       </View>
 
-      {/* Submit */}
-      <TouchableOpacity
-        onPress={submit}
-        className={`bg-green-600 rounded-full p-4 mb-8 ${loading ? 'opacity-50' : ''}`}
-        disabled={loading}
-      >
-        <Text className="text-center text-white text-lg font-bold">
-          {loading ? 'Submitting…' : 'Submit Selection'}
-        </Text>
-      </TouchableOpacity>
+      <View style={styles.card}>
+        <Text style={styles.label}>Allergies</Text>
+        <TextInput
+          placeholder="comma-separated (e.g., peanuts, gluten)"
+          value={allergies.join(', ')}
+          onChangeText={(val) =>
+            setAllergies(val.split(',').map((s) => s.trim()))
+          }
+          style={styles.input}
+        />
+      </View>
+
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+          <Text style={styles.buttonText}>Cancel</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.submitBtn, loading && { opacity: 0.6 }]}
+          onPress={submit}
+          disabled={loading}
+        >
+          <Text style={styles.buttonText}>
+            {loading ? 'Submitting…' : 'Submit'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f0e5',
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 16,
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 1,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  required: {
+    color: 'red',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 15,
+  },
+  hint: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 10,
+  },
+  pillContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  pill: {
+    backgroundColor: '#e0f0ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginRight: 8,
+    marginTop: 6,
+  },
+  pillText: {
+    color: '#007AFF',
+    fontWeight: '500',
+  },
+  warning: {
+    color: '#c00',
+    fontSize: 12,
+    marginTop: 6,
+  },
+  drink: {
+    fontSize: 16,
+    color: '#333',
+  },
+  selectedDrink: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  roomServiceText: {
+    fontSize: 16,
+    marginTop: 8,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  cancelBtn: {
+    backgroundColor: '#999',
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+  },
+  submitBtn: {
+    backgroundColor: '#2f80ed',
+    flex: 1,
+    padding: 14,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+});

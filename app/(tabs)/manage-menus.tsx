@@ -30,6 +30,53 @@ export default function AddDailyMenuScreen() {
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
   const [itemsText, setItemsText] = useState('');
+  const [menusByType, setMenusByType] = useState({});
+
+  useEffect(() => {
+    fetchMenusForDate();
+  }, [date]);
+
+  const fetchMenusForDate = async () => {
+    try {
+      const res = await apiClient.get('/daily-menus/', {
+        params: { date: date.toISOString().split('T')[0] },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const grouped = { Breakfast: [], Lunch: [], Dinner: [] };
+      for (const entry of res.data) {
+        if (grouped[entry.meal_type]) {
+          grouped[entry.meal_type].push(...entry.items.map((item, idx) => ({
+            name: item,
+            id: entry.id,
+            index: idx,
+          })));
+        }
+      }
+
+      setMenusByType(grouped);
+    } catch (err) {
+      console.error('Error loading menus:', err);
+    }
+  };
+
+  const deleteMenuItem = async (menuId, itemIndex) => {
+    try {
+      await apiClient.delete(`/daily-menus/${menuId}/`, {
+        data: { item_index: itemIndex },
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      await fetchMenusForDate();
+    } catch (err) {
+      console.error('Delete failed:', err);
+  
+      if (err?.response?.status === 404) {
+        await fetchMenusForDate();
+      } else {
+        Alert.alert('Error', 'Could not delete menu item.');
+      }
+    }
+  };
 
   const handleSubmit = async () => {
     const itemsArray = itemsText
@@ -58,6 +105,7 @@ export default function AddDailyMenuScreen() {
       setItemsText('');
       setMealType('Breakfast');
       setDate(new Date());
+      fetchMenusForDate();
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Failed to create daily menu.');
@@ -120,6 +168,28 @@ export default function AddDailyMenuScreen() {
         }}
         onCancel={() => setDatePickerVisible(false)}
       />
+
+      <View style={{ marginTop: 30 }}>
+        {mealOptions.map((type) => (
+          <View key={type} style={{ marginBottom: 20 }}>
+            <Text style={{ fontWeight: 'bold', fontSize: 16 }}>{type}</Text>
+            {menusByType[type]?.length ? (
+              menusByType[type].map((item, i) =>
+                item?.id != null && (
+                  <View key={`${item.id}-${item.index}`} style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 4 }}>
+                    <TouchableOpacity onPress={() => deleteMenuItem(item.id, item.index)}>
+                      <Text style={{ color: 'red', fontWeight: 'bold', fontSize: 20, marginRight: 10 }}>✖</Text>
+                    </TouchableOpacity>
+                    <Text>{item.name}</Text>
+                  </View>
+                )
+              )
+            ) : (
+  <Text style={{ fontStyle: 'italic', color: '#888' }}>No items</Text>
+)}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }

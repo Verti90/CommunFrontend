@@ -9,7 +9,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import axios from 'axios';
+import apiClient from '@services/api';
 import { useAuth } from '@auth';
 
 export default function MealSelectionScreen() {
@@ -26,8 +26,11 @@ export default function MealSelectionScreen() {
   const { token } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const validMealTimes = ['Breakfast', 'Lunch', 'Dinner'];
   const passedMealTime =
-    typeof params.mealTime === 'string' ? params.mealTime : 'Breakfast';
+  typeof params.mealTime === 'string' && validMealTimes.includes(params.mealTime)
+    ? params.mealTime
+    : 'Breakfast';
 
   const parsedItems = Array.isArray(params.items)
     ? params.items
@@ -38,8 +41,8 @@ export default function MealSelectionScreen() {
   const [mealTime, setMealTime] = useState(passedMealTime);
 
   useEffect(() => {
-    axios
-      .get('/api/profile/preferences/', {
+    apiClient
+      .get('/profile/preferences/', {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => {
@@ -70,11 +73,11 @@ export default function MealSelectionScreen() {
         'Please complete all required selections.'
       );
     }
-
+  
     setLoading(true);
     try {
-      await axios.post(
-        '/api/meals/',
+      await apiClient.post(
+        '/meals/',
         {
           meal_time: mealTime,
           main_item: mainItem,
@@ -89,17 +92,21 @@ export default function MealSelectionScreen() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+  
       Alert.alert('Success', 'Meal selection submitted.', [
         { text: 'OK', onPress: () => router.replace('/dining') },
       ]);
-    } catch (err) {
+    } catch (err: any) {
+      console.log('❌ Meal submission error FULL:', err);
+      console.log('📡 Axios status:', err?.response?.status);
+      console.log('📄 Axios data:', err?.response?.data);
+      console.log('🧾 Axios headers:', err?.response?.headers);
       Alert.alert('Error', 'Submission failed.');
     } finally {
       setLoading(false);
     }
   };
-
+  
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{mealTime} Selection</Text>

@@ -176,9 +176,14 @@ export default function MealSelectionScreen() {
 
       <View style={styles.card}>
         <Text style={styles.label}>Room Service?</Text>
-        <TouchableOpacity onPress={() => setRoomService(!roomService)}>
-          <Text style={styles.roomServiceText}>
-            {roomService ? '✅ Yes' : '❌ No'}
+        <TouchableOpacity onPress={() => setRoomService(true)} style={{ paddingVertical: 6 }}>
+          <Text style={roomService ? styles.selectedDrink : styles.drink}>
+            {roomService ? '🔘' : '⚪'} Yes
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setRoomService(false)} style={{ paddingVertical: 6 }}>
+          <Text style={!roomService ? styles.selectedDrink : styles.drink}>
+            {!roomService ? '🔘' : '⚪'} No
           </Text>
         </TouchableOpacity>
       </View>

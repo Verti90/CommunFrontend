@@ -29,8 +29,8 @@ export default function AddDailyMenuScreen() {
   const [mealType, setMealType] = useState('Breakfast');
   const [date, setDate] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisible] = useState(false);
-  const [itemsText, setItemsText] = useState('');
   const [menusByType, setMenusByType] = useState({});
+  const [categoryInputs, setCategoryInputs] = useState({});
 
   useEffect(() => {
     fetchMenusForDate();
@@ -79,10 +79,14 @@ export default function AddDailyMenuScreen() {
   };  
 
   const handleSubmit = async () => {
-    const itemsArray = itemsText
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
+  const itemsArray = [];
+  Object.entries(categoryInputs).forEach(([category, options]) => {
+    options?.forEach((opt, idx) => {
+      if (opt?.trim()) {
+        itemsArray.push(`${category} Option ${String.fromCharCode(65 + idx)}: ${opt.trim()}`);
+      }
+    });
+  });
 
     if (!itemsArray.length) {
       return Alert.alert('Validation Error', 'Please enter at least one menu item.');
@@ -102,8 +106,8 @@ export default function AddDailyMenuScreen() {
       );
 
       Alert.alert('Success', 'Daily menu created successfully.');
-      setItemsText('');
       setMealType('Breakfast');
+      setCategoryInputs({});
       fetchMenusForDate();
     } catch (err) {
       console.error(err);
@@ -114,6 +118,16 @@ export default function AddDailyMenuScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Manage Menus</Text>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Date</Text>
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => setDatePickerVisible(true)}
+        >
+          <Text>{date.toISOString().split('T')[0]}</Text>
+        </TouchableOpacity>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>Meal Type</Text>
@@ -133,25 +147,27 @@ export default function AddDailyMenuScreen() {
         ))}
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Date</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setDatePickerVisible(true)}
-        >
-          <Text>{date.toISOString().split('T')[0]}</Text>
-        </TouchableOpacity>
-      </View>
+      {['Main Course', 'Sides', ...(mealType === 'Dinner' ? ['Dessert'] : [])].map((category) => (
+        <View key={category} style={styles.card}>
+          <Text style={styles.label}>{category} Options (A, B, C or leave blank)</Text>
+          {[0, 1, 2].map((i) => (
+            <TextInput
+              key={`${category}-${i}`}
+              placeholder={`Option ${String.fromCharCode(65 + i)}`}
+              value={(categoryInputs[category] && categoryInputs[category][i]) || ''}
+              onChangeText={(text) =>
+                setCategoryInputs((prev) => {
+                  const updated = [...(prev[category] || ['', '', ''])];
+                  updated[i] = text;
+                  return { ...prev, [category]: updated };
+                })
+              }
+              style={styles.input}
+            />
+          ))}
+        </View>
+      ))}
 
-      <View style={styles.card}>
-        <Text style={styles.label}>Menu Items (comma-separated)</Text>
-        <TextInput
-          placeholder="e.g., Eggs, Bacon, Toast"
-          value={itemsText}
-          onChangeText={setItemsText}
-          style={styles.input}
-        />
-      </View>
 
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitButtonText}>Submit Menu</Text>

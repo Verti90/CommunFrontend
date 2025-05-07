@@ -79,19 +79,67 @@ export default function AddDailyMenuScreen() {
   };  
 
   const handleSubmit = async () => {
-  const itemsArray = [];
-  Object.entries(categoryInputs).forEach(([category, options]) => {
-    options?.forEach((opt, idx) => {
-      if (opt?.trim()) {
-        itemsArray.push(`${category} Option ${String.fromCharCode(65 + idx)}: ${opt.trim()}`);
-      }
-    });
-  });
-
+    const itemsArray = [];
+    const labelsSet = new Set();
+    let duplicateLabel = null;
+  
+    for (const [category, options] of Object.entries(categoryInputs)) {
+      options?.forEach((opt, idx) => {
+        if (opt?.trim()) {
+          const label = `${category} Option ${String.fromCharCode(65 + idx)}`;
+          if (labelsSet.has(label)) {
+            duplicateLabel = label;
+          }
+          labelsSet.add(label);
+          itemsArray.push(`${label}: ${opt.trim()}`);
+        }
+      });
+    }
+  
+    if (duplicateLabel) {
+      return Alert.alert('Duplicate Entry', `You already added "${duplicateLabel}". Please remove it before adding a new one.`);
+    }
+  
     if (!itemsArray.length) {
       return Alert.alert('Validation Error', 'Please enter at least one menu item.');
     }
-
+  
+    const existingLabels = new Set(
+      menusByType[mealType]?.map((item) => item.name.split(':')[0].trim())
+    );
+  
+    for (const item of itemsArray) {
+      const label = item.split(':')[0].trim();
+      if (existingLabels.has(label)) {
+        const [category, , optionLetter] = label.split(' ');
+        const index = optionLetter.charCodeAt(0) - 65;
+    
+        setCategoryInputs((prev) => {
+          const updated = [...(prev[category] || ['', '', ''])];
+          updated[index] = ' ';
+          const newState = { ...prev, [category]: updated };
+        
+          setTimeout(() => {
+            setCategoryInputs((latest) => {
+              const refreshed = [...(latest[category] || ['', '', ''])];
+              if (refreshed[index] === ' ') {
+                refreshed[index] = '';
+                return { ...latest, [category]: refreshed };
+              }
+              return latest;
+            });
+          }, 0);
+        
+          return newState;
+        });        
+    
+        return Alert.alert(
+          'Duplicate Entry',
+          `"${label}" already exists for ${mealType} on ${date.toISOString().split('T')[0]}.\nThat field has been cleared. Please delete the original first if you want to change it.`
+        );
+      }
+    }    
+  
     try {
       await apiClient.post(
         '/daily-menus/',
@@ -104,7 +152,7 @@ export default function AddDailyMenuScreen() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+  
       Alert.alert('Success', 'Daily menu created successfully.');
       setMealType('Breakfast');
       setCategoryInputs({});
@@ -113,7 +161,7 @@ export default function AddDailyMenuScreen() {
       console.error(err);
       Alert.alert('Error', 'Failed to create daily menu.');
     }
-  };
+  };  
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

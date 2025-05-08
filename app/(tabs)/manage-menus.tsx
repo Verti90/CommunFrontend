@@ -155,7 +155,6 @@ export default function AddDailyMenuScreen() {
       );
   
       Alert.alert('Success', 'Daily menu created successfully.');
-      setMealType('Breakfast');
       setCategoryInputs({});
       fetchMenusForDate();
     } catch (err) {

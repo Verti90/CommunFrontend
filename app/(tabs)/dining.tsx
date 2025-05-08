@@ -99,26 +99,24 @@ export default function Dining() {
     <View key={meal.id} style={styles.mealContainer}>
       <Text style={styles.mealType}>{meal.meal_type}</Text>
       <View style={styles.mealCard}>
-        {selection ? (
-          <>
-            <Text style={styles.itemText}>Main: {selection.main_item}</Text>
-            <Text style={styles.itemText}>Side: {selection.protein}</Text>
-            <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
-            {selection.room_service && <Text style={styles.itemText}>🛎️ Room Service</Text>}
-            {selection.guest_name ? (
-              <Text style={styles.itemText}>
-                Guest: {selection.guest_name} – {selection.guest_meal}
-              </Text>
-            ) : null}
-            {selection.allergies?.length > 0 && (
-              <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
-            )}
-          </>
-        ) : (
-          meal.items.map((item, index) => (
-            <Text key={index} style={styles.itemText}>{item}</Text>
-          ))
-        )}
+      {selection ? (
+  <>
+    <Text style={styles.itemText}>Main: {selection.main_item}</Text>
+    <Text style={styles.itemText}>Side: {selection.protein}</Text>
+    <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
+    {selection.room_service && <Text style={styles.itemText}>🛎️ Room Service</Text>}
+    {selection.guest_name ? (
+      <Text style={styles.itemText}>
+        Guest: {selection.guest_name} – {selection.guest_meal}
+      </Text>
+    ) : null}
+    {selection.allergies?.length > 0 && (
+      <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
+    )}
+  </>
+) : (
+  <Text style={styles.itemText}>(No selections made)</Text>
+)}
 
         <TouchableOpacity
           style={styles.selectionButton}
@@ -138,64 +136,6 @@ export default function Dining() {
     </View>
   );
 })}
-
-{upcomingSelections.length > 0 && (
-  <View style={{ marginTop: 30 }}>
-    <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
-      Your Upcoming Meal Selections
-    </Text>
-    {upcomingSelections.map((sel) => (
-      <View key={sel.id} style={{
-  backgroundColor: '#E3EAD9',
-  borderRadius: 12,
-  padding: 10,
-  marginBottom: 10
-}}>
-  <Text style={{ fontWeight: 'bold' }}>{sel.meal_time} – {new Date(sel.created_at).toLocaleDateString()}</Text>
-  <Text>Main: {sel.main_item}</Text>
-  <Text>Protein: {sel.protein}</Text>
-  <Text>Drinks: {sel.drinks?.join(', ')}</Text>
-  {sel.guest_name ? <Text>Guest: {sel.guest_name} — {sel.guest_meal}</Text> : null}
-  {sel.room_service ? <Text>🛎️ Room Service</Text> : null}
-
-  {/* Edit Button */}
-  <TouchableOpacity
-    onPress={() =>
-      router.push({
-        pathname: '/meal-selection',
-        params: {
-          mealTime: sel.meal_time,
-          items: JSON.stringify([sel.main_item, sel.protein, ...sel.drinks]),
-        },
-      })
-    }
-    style={{ marginTop: 6 }}
-  >
-    <Text style={{ color: '#1A4D2E', fontWeight: 'bold' }}>✏️ Edit</Text>
-  </TouchableOpacity>
-
-  {/* Cancel Button */}
-  <TouchableOpacity
-    onPress={async () => {
-      try {
-        await apiClient.delete(`/meals/${sel.id}/`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        Alert.alert('Canceled', 'Your selection was canceled.');
-        fetchUpcomingMeals(); // refresh the list
-      } catch (err) {
-        Alert.alert('Error', 'Could not cancel selection.');
-      }
-    }}
-    style={{ marginTop: 4 }}
-  >
-    <Text style={{ color: 'red', fontWeight: 'bold' }}>❌ Cancel</Text>
-  </TouchableOpacity>
-</View>
-
-    ))}
-  </View>
-)}
 
       <TouchableOpacity onPress={() => Alert.alert(
         'Always Available Menu',

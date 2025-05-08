@@ -103,18 +103,18 @@ export default function Dining() {
           <>
             <Text style={styles.itemText}>Main: {selection.main_item}</Text>
             <Text style={styles.itemText}>Side: {selection.protein}</Text>
-            <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
-            {selection.room_service && (
-              <Text style={styles.itemText}>🛎️ Room Service</Text>
-            )}
-            {selection.guest_name && (
-              <Text style={styles.itemText}>
-                Guest: {selection.guest_name} – {selection.guest_meal}
-              </Text>
-            )}
-            {selection.allergies?.length > 0 && (
-              <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
-            )}
+            <Text style={styles.itemText}>
+              Drink: {Array.isArray(selection.drinks) ? selection.drinks[0] || 'None' : selection.drinks || 'None'}
+            </Text>
+            <Text style={styles.itemText}>
+              Room Service: {selection.room_service ? 'Yes' : 'No'}
+            </Text>
+            <Text style={styles.itemText}>
+              Add Guest: {selection.guest_name ? `Yes (${selection.guest_name} - ${selection.guest_meal})` : 'No'}
+            </Text>
+            <Text style={styles.itemText}>
+              Allergies: {selection.allergies?.length > 0 ? selection.allergies.join(', ') : 'No'}
+            </Text>
           </>
         ) : (
           <Text style={styles.itemText}>(No selections made)</Text>

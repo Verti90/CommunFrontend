@@ -42,7 +42,7 @@ export default function MealSelectionScreen() {
 
   const [mealTime] = useState(passedMealTime);
 
-  const drinkOptions = ['Coffee', 'OJ', 'Milk', 'Tea', 'Water'];
+  const drinkOptions = ['Coffee', 'OJ', 'Milk', 'Tea', 'Water', 'None'];
 
   const categorizedItems = {
     'Main Course': [],
@@ -129,7 +129,7 @@ export default function MealSelectionScreen() {
       {mealTime === 'Dinner' && renderDynamicCategory('Dessert', categorizedItems['Dessert'], dessertItem, setDessertItem)}
 
       <View style={styles.card}>
-        <Text style={styles.label}>Drink (Choose One)</Text>
+       <Text style={styles.label}>Drink</Text>
         <View style={styles.pillContainer}>
           {drinkOptions.map((d) => (
             <TouchableOpacity

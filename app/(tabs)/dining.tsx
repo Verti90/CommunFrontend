@@ -88,30 +88,56 @@ export default function Dining() {
         onCancel={() => setShowDatePicker(false)}
       />
 
-{meals.map((meal) => (
-  <View key={meal.id} style={styles.mealContainer}>
-    <Text style={styles.mealType}>{meal.meal_type}</Text>
-    <View style={styles.mealCard}>
-      {meal.items.map((item, index) => (
-        <Text key={index} style={styles.itemText}>{item}</Text>
-      ))}
-      <TouchableOpacity
-        style={styles.selectionButton}
-        onPress={() =>
-          router.push({
-            pathname: '/meal-selection',
-            params: {
-              mealTime: meal.meal_type,
-              items: JSON.stringify(meal.items),
-            },
-          })
-        }
-      >
-        <Text style={styles.buttonText}>Make Selections →</Text>
-      </TouchableOpacity>
+{meals.map((meal) => {
+  const selection = upcomingSelections.find(
+    (sel) =>
+      sel.meal_time.toLowerCase() === meal.meal_type.toLowerCase() &&
+      new Date(sel.created_at).toDateString() === date.toDateString()
+  );
+
+  return (
+    <View key={meal.id} style={styles.mealContainer}>
+      <Text style={styles.mealType}>{meal.meal_type}</Text>
+      <View style={styles.mealCard}>
+        {selection ? (
+          <>
+            <Text style={styles.itemText}>Main: {selection.main_item}</Text>
+            <Text style={styles.itemText}>Side: {selection.protein}</Text>
+            <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
+            {selection.room_service && <Text style={styles.itemText}>🛎️ Room Service</Text>}
+            {selection.guest_name ? (
+              <Text style={styles.itemText}>
+                Guest: {selection.guest_name} – {selection.guest_meal}
+              </Text>
+            ) : null}
+            {selection.allergies?.length > 0 && (
+              <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
+            )}
+          </>
+        ) : (
+          meal.items.map((item, index) => (
+            <Text key={index} style={styles.itemText}>{item}</Text>
+          ))
+        )}
+
+        <TouchableOpacity
+          style={styles.selectionButton}
+          onPress={() =>
+            router.push({
+              pathname: '/meal-selection',
+              params: {
+                mealTime: meal.meal_type,
+                items: JSON.stringify(meal.items),
+              },
+            })
+          }
+        >
+          <Text style={styles.buttonText}>Make Selections →</Text>
+        </TouchableOpacity>
+      </View>
     </View>
-  </View>
-))}
+  );
+})}
 
 {upcomingSelections.length > 0 && (
   <View style={{ marginTop: 30 }}>

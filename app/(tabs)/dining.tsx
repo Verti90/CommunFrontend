@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useAuth } from '@auth';
+import { formatDateLocal } from '@utils/time';
 import apiClient from '@services/api';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -46,7 +47,7 @@ export default function Dining() {
 
   const fetchMeals = async (selectedDate: Date) => {
     try {
-      const formattedDate = selectedDate.toISOString().split('T')[0];
+      const formattedDate = formatDateLocal(selectedDate);
       const response = await apiClient.get('/daily-menus/', {
         params: { date: formattedDate },
         headers: { Authorization: `Bearer ${token}` },
@@ -73,7 +74,7 @@ export default function Dining() {
         onPress={() => setShowDatePicker(true)}
         style={styles.dateButton}
       >
-        <Text style={styles.dateText}>Meals for {date.toISOString().split('T')[0]} (Tap to change)</Text>
+        <Text style={styles.dateText}>Meals for {formatDateLocal(date)} (Tap to change)</Text>
       </TouchableOpacity>
 
       <DateTimePickerModal

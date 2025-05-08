@@ -11,6 +11,7 @@ import {
 import apiClient from '@services/api';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@auth';
+import { formatDateLocal } from '@utils/time';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 const mealOptions = ['Breakfast', 'Lunch', 'Dinner'];
@@ -39,7 +40,7 @@ export default function AddDailyMenuScreen() {
   const fetchMenusForDate = async () => {
     try {
       const res = await apiClient.get('/daily-menus/', {
-        params: { date: date.toISOString().split('T')[0] },
+        params: { date: formatDateLocal(date) },
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -113,12 +114,12 @@ export default function AddDailyMenuScreen() {
       if (existingLabels.has(label)) {
         const [category, , optionLetter] = label.split(' ');
         const index = optionLetter.charCodeAt(0) - 65;
-    
+  
         setCategoryInputs((prev) => {
           const updated = [...(prev[category] || ['', '', ''])];
           updated[index] = ' ';
           const newState = { ...prev, [category]: updated };
-        
+  
           setTimeout(() => {
             setCategoryInputs((latest) => {
               const refreshed = [...(latest[category] || ['', '', ''])];
@@ -129,23 +130,23 @@ export default function AddDailyMenuScreen() {
               return latest;
             });
           }, 0);
-        
+  
           return newState;
-        });        
-    
+        });
+  
         return Alert.alert(
           'Duplicate Entry',
-          `"${label}" already exists for ${mealType} on ${date.toISOString().split('T')[0]}.\nThat field has been cleared. Please delete the original first if you want to change it.`
+          `"${label}" already exists for ${mealType} on ${formatDateLocal(date)}.\nThat field has been cleared. Please delete the original first if you want to change it.`
         );
       }
-    }    
+    }
   
     try {
       await apiClient.post(
         '/daily-menus/',
         {
           meal_type: mealType,
-          date: date.toISOString().split('T')[0],
+          date: formatDateLocal(date),
           items: itemsArray,
         },
         {
@@ -161,8 +162,8 @@ export default function AddDailyMenuScreen() {
       console.error(err);
       Alert.alert('Error', 'Failed to create daily menu.');
     }
-  };  
-
+  };
+  
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Manage Menus</Text>
@@ -173,7 +174,7 @@ export default function AddDailyMenuScreen() {
           style={styles.input}
           onPress={() => setDatePickerVisible(true)}
         >
-          <Text>{date.toISOString().split('T')[0]}</Text>
+          <Text>{formatDateLocal(date)}</Text>
         </TouchableOpacity>
       </View>
 
@@ -232,7 +233,7 @@ export default function AddDailyMenuScreen() {
         onCancel={() => setDatePickerVisible(false)}
       />
       <Text style={{ textAlign: 'center', fontSize: 16, marginTop: 20 }}>
-        Showing menus for: {date.toISOString().split('T')[0]}
+        Showing menus for: {formatDateLocal(date)}
       </Text>
       <View style={{ marginTop: 30 }}>
         {mealOptions.map((type) => (

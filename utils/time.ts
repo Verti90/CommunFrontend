@@ -6,6 +6,11 @@ export const toCentralUtcISOString = (localDate: Date): string => {
   return moment(localDate).tz('America/Chicago').utc().format();
 };
 
+// Format a date in Central Time as YYYY-MM-DD
+export const formatDateLocal = (date: Date): string => {
+  return moment(date).tz('America/Chicago').format('YYYY-MM-DD');
+};
+
 // Get start and end of the week (Sunday to Saturday) for a given date
 export function getWeekRange(date: Date): { start: Date; end: Date } {
   const start = startOfWeek(date, { weekStartsOn: 0 }); // Sunday

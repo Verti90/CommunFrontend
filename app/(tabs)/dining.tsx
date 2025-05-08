@@ -99,51 +99,80 @@ export default function Dining() {
     <View key={meal.id} style={styles.mealContainer}>
       <Text style={styles.mealType}>{meal.meal_type}</Text>
       <View style={styles.mealCard}>
-      {selection ? (
-  <>
-    <Text style={styles.itemText}>Main: {selection.main_item}</Text>
-    <Text style={styles.itemText}>Side: {selection.protein}</Text>
-    <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
-    {selection.room_service && <Text style={styles.itemText}>🛎️ Room Service</Text>}
-    {selection.guest_name ? (
-      <Text style={styles.itemText}>
-        Guest: {selection.guest_name} – {selection.guest_meal}
-      </Text>
-    ) : null}
-    {selection.allergies?.length > 0 && (
-      <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
-    )}
-  </>
-) : (
-  <Text style={styles.itemText}>(No selections made)</Text>
-)}
+        {selection ? (
+          <>
+            <Text style={styles.itemText}>Main: {selection.main_item}</Text>
+            <Text style={styles.itemText}>Side: {selection.protein}</Text>
+            <Text style={styles.itemText}>Drink: {selection.drinks?.join(', ')}</Text>
+            {selection.room_service && (
+              <Text style={styles.itemText}>🛎️ Room Service</Text>
+            )}
+            {selection.guest_name && (
+              <Text style={styles.itemText}>
+                Guest: {selection.guest_name} – {selection.guest_meal}
+              </Text>
+            )}
+            {selection.allergies?.length > 0 && (
+              <Text style={styles.itemText}>Allergies: {selection.allergies.join(', ')}</Text>
+            )}
+          </>
+        ) : (
+          <Text style={styles.itemText}>(No selections made)</Text>
+        )}
 
-        <TouchableOpacity
-          style={styles.selectionButton}
-          onPress={() =>
-            router.push({
-              pathname: '/meal-selection',
-              params: {
-                mealTime: meal.meal_type,
-                items: JSON.stringify(meal.items),
-              },
-            })
-          }
-        >
-          <Text style={styles.buttonText}>Make Selections →</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+          <TouchableOpacity
+            style={styles.selectionButton}
+            onPress={() =>
+              router.push({
+                pathname: '/meal-selection',
+                params: {
+                  mealTime: meal.meal_type,
+                  items: JSON.stringify(meal.items),
+                },
+              })
+            }
+          >
+            <Text style={styles.buttonText}>Make Selections →</Text>
+          </TouchableOpacity>
+
+          {selection && (
+            <TouchableOpacity
+              style={[styles.selectionButton, { marginLeft: 12 }]}
+              onPress={async () => {
+                try {
+                  await apiClient.delete(`/meals/${selection.id}/`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  Alert.alert('Selection canceled');
+                  fetchUpcomingMeals();
+                } catch (err) {
+                  Alert.alert('Error', 'Could not cancel your selection.');
+                }
+              }}
+            >
+              <Text style={[styles.buttonText, { color: '#FFEAEA', fontWeight: 'bold' }]}>
+                ❌ Cancel Selection
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
 })}
 
-      <TouchableOpacity onPress={() => Alert.alert(
-        'Always Available Menu',
-        'Toast\nCereal\nYogurt\nCoffee\nTea\nWater'
-      )}>
-        <Text style={styles.viewMenu}>View always available menu</Text>
-      </TouchableOpacity>
-    </ScrollView>
+<TouchableOpacity
+  onPress={() =>
+    Alert.alert(
+      'Always Available Menu',
+      'Toast\nCereal\nYogurt\nCoffee\nTea\nWater'
+    )
+  }
+>
+  <Text style={styles.viewMenu}>View always available menu</Text>
+</TouchableOpacity>
+</ScrollView>
   );
 }
 

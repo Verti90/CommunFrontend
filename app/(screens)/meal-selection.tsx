@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   Alert,
   StyleSheet,
+  TextInput,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiClient from '@services/api';
@@ -14,23 +14,25 @@ import { useAuth } from '@auth';
 
 export default function MealSelectionScreen() {
   const [mainItem, setMainItem] = useState('');
-  const [protein, setProtein] = useState('');
-  const [drinks, setDrinks] = useState<string[]>([]);
+  const [sideItem, setSideItem] = useState('');
+  const [dessertItem, setDessertItem] = useState('');
+  const [drink, setDrink] = useState('');
   const [roomService, setRoomService] = useState(false);
+  const [guestEnabled, setGuestEnabled] = useState(false);
   const [guestName, setGuestName] = useState('');
   const [guestMeal, setGuestMeal] = useState('');
-  const [allergies, setAllergies] = useState<string[]>([]);
+  const [hasAllergies, setHasAllergies] = useState(false);
+  const [allergies, setAllergies] = useState('');
   const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState<any>({});
-
-  const { token } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { token } = useAuth();
+
   const validMealTimes = ['Breakfast', 'Lunch', 'Dinner'];
   const passedMealTime =
-  typeof params.mealTime === 'string' && validMealTimes.includes(params.mealTime)
-    ? params.mealTime
-    : 'Breakfast';
+    typeof params.mealTime === 'string' && validMealTimes.includes(params.mealTime)
+      ? params.mealTime
+      : 'Breakfast';
 
   const parsedItems = Array.isArray(params.items)
     ? params.items
@@ -38,197 +40,188 @@ export default function MealSelectionScreen() {
     ? JSON.parse(params.items)
     : [];
 
-  const [mealTime, setMealTime] = useState(passedMealTime);
+  const [mealTime] = useState(passedMealTime);
 
-  useEffect(() => {
-    apiClient
-      .get('/profile/preferences/', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setProfile(res.data);
-        setGuestName(res.data.default_guest_name || '');
-        setGuestMeal(res.data.default_guest_meal || '');
-        setAllergies(res.data.default_allergies || []);
-      });
-  }, []);
+  const drinkOptions = ['Coffee', 'OJ', 'Milk', 'Tea', 'Water'];
 
-  const toggleDrink = (item: string) => {
-    setDrinks((prev) => {
-      if (prev.includes(item)) {
-        return prev.filter((d) => d !== item);
-      } else if (prev.length < 2) {
-        return [...prev, item];
-      } else {
-        Alert.alert('Limit Reached', 'You can only select up to 2 drinks.');
-        return prev;
-      }
-    });
+  const categorizedItems = {
+    'Main Course': [],
+    Sides: [],
+    Dessert: [],
   };
 
-  const submit = async () => {
-    if (!mainItem || !protein || drinks.length === 0) {
-      return Alert.alert(
-        'Missing fields',
-        'Please complete all required selections.'
-      );
+  parsedItems.forEach((item) => {
+    const [label, value] = item.split(':').map((s) => s.trim());
+    if (label.startsWith('Main Course')) categorizedItems['Main Course'].push(value);
+    else if (label.startsWith('Sides')) categorizedItems['Sides'].push(value);
+    else if (label.startsWith('Dessert')) categorizedItems['Dessert'].push(value);
+  });
+
+  // Always include 'None' as a fallback option
+  Object.keys(categorizedItems).forEach((key) => {
+    if (!categorizedItems[key].includes('None')) {
+      categorizedItems[key].push('None');
     }
-  
+  });
+
+  const handleSubmit = async () => {
+    if (!mainItem || !sideItem || !drink) {
+      return Alert.alert('Missing fields', 'Please complete all required selections.');
+    }
+
     setLoading(true);
     try {
       await apiClient.post(
         '/meals/',
         {
           meal_time: mealTime,
-          main_item: mainItem,
-          protein,
-          drinks,
+          main_item: `${mainItem}${dessertItem ? `, Dessert: ${dessertItem}` : ''}`,
+          protein: sideItem,
+          drinks: [drink],
           room_service: roomService,
-          guest_name: guestName,
-          guest_meal: guestMeal,
-          allergies,
+          guest_name: guestEnabled ? guestName : '',
+          guest_meal: guestEnabled ? guestMeal : '',
+          allergies: hasAllergies ? allergies.split(',').map((s) => s.trim()) : [],
         },
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-  
+
       Alert.alert('Success', 'Meal selection submitted.', [
         { text: 'OK', onPress: () => router.replace('/dining') },
       ]);
-    } catch (err: any) {
-      console.log('❌ Meal submission error FULL:', err);
-      console.log('📡 Axios status:', err?.response?.status);
-      console.log('📄 Axios data:', err?.response?.data);
-      console.log('🧾 Axios headers:', err?.response?.headers);
+    } catch (err) {
+      console.error('❌ Submission Error:', err);
       Alert.alert('Error', 'Submission failed.');
     } finally {
       setLoading(false);
     }
   };
-  
+
+  const renderDynamicCategory = (label, options, selected, setSelected) => (
+    <View style={styles.card}>
+      <Text style={styles.label}>{label}</Text>
+      <View style={styles.pillContainer}>
+        {options.length > 0 ? (
+          options.map((opt, idx) => (
+            <TouchableOpacity
+              key={idx}
+              style={[styles.pill, selected === opt && styles.pillSelected]}
+              onPress={() => setSelected(opt)}
+            >
+              <Text style={selected === opt ? styles.pillTextSelected : styles.pillText}>{opt}</Text>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text style={{ fontStyle: 'italic', color: '#888' }}>No options available</Text>
+        )}
+      </View>
+    </View>
+  );
+
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>{mealTime} Selection</Text>
 
-      <View style={styles.card}>
-        <Text style={styles.label}>
-          Main Course <Text style={styles.required}>*</Text>
-        </Text>
-        <TextInput
-          placeholder="e.g., Eggs, Pancakes"
-          value={mainItem}
-          onChangeText={setMainItem}
-          style={styles.input}
-        />
+      {renderDynamicCategory('Main Course', categorizedItems['Main Course'], mainItem, setMainItem)}
+      {renderDynamicCategory('Side', categorizedItems['Sides'], sideItem, setSideItem)}
+      {mealTime === 'Dinner' && renderDynamicCategory('Dessert', categorizedItems['Dessert'], dessertItem, setDessertItem)}
 
-        {parsedItems.length > 0 && (
+      <View style={styles.card}>
+        <Text style={styles.label}>Drink (Choose One)</Text>
+        <View style={styles.pillContainer}>
+          {drinkOptions.map((d) => (
+            <TouchableOpacity
+              key={d}
+              onPress={() => setDrink(d)}
+              style={[styles.pill, drink === d && styles.pillSelected]}
+            >
+              <Text style={drink === d ? styles.pillTextSelected : styles.pillText}>{d}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Room Service?</Text>
+        <View style={styles.pillContainer}>
+          {['Yes', 'No'].map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setRoomService(opt === 'Yes')}
+              style={[styles.pill, roomService === (opt === 'Yes') && styles.pillSelected]}
+            >
+              <Text style={roomService === (opt === 'Yes') ? styles.pillTextSelected : styles.pillText}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.label}>Add Guest?</Text>
+        <View style={styles.pillContainer}>
+          {['Yes', 'No'].map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setGuestEnabled(opt === 'Yes')}
+              style={[styles.pill, guestEnabled === (opt === 'Yes') && styles.pillSelected]}
+            >
+              <Text style={guestEnabled === (opt === 'Yes') ? styles.pillTextSelected : styles.pillText}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {guestEnabled && (
           <>
-            <Text style={styles.hint}>Quick picks:</Text>
-            <View style={styles.pillContainer}>
-              {parsedItems.map((item, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setMainItem(item)}
-                  style={styles.pill}
-                >
-                  <Text style={styles.pillText}>{item}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {parsedItems.some((i) => allergies.includes(i)) && (
-              <Text style={styles.warning}>
-                ⚠ Some items may contain your allergies
-              </Text>
-            )}
+            <TextInput
+              placeholder="Guest Name"
+              value={guestName}
+              onChangeText={setGuestName}
+              style={styles.input}
+            />
+            <TextInput
+              placeholder="Guest Meal"
+              value={guestMeal}
+              onChangeText={setGuestMeal}
+              style={[styles.input, { marginTop: 10 }]}
+            />
           </>
         )}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.label}>
-          Protein <Text style={styles.required}>*</Text>
-        </Text>
-        <TextInput
-          placeholder="e.g., Bacon, Ham"
-          value={protein}
-          onChangeText={setProtein}
-          style={styles.input}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>
-          Drinks (Choose up to 2) <Text style={styles.required}>*</Text>
-        </Text>
-        {['Coffee', 'OJ', 'Milk', 'Tea'].map((d) => (
-          <TouchableOpacity
-            key={d}
-            onPress={() => toggleDrink(d)}
-            style={{ paddingVertical: 6 }}
-          >
-            <Text style={drinks.includes(d) ? styles.selectedDrink : styles.drink}>
-              {drinks.includes(d) ? '☑' : '☐'} {d}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Room Service?</Text>
-        <TouchableOpacity onPress={() => setRoomService(true)} style={{ paddingVertical: 6 }}>
-          <Text style={roomService ? styles.selectedDrink : styles.drink}>
-            {roomService ? '🔘' : '⚪'} Yes
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setRoomService(false)} style={{ paddingVertical: 6 }}>
-          <Text style={!roomService ? styles.selectedDrink : styles.drink}>
-            {!roomService ? '🔘' : '⚪'} No
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Guest Name (optional)</Text>
-        <TextInput
-          value={guestName}
-          onChangeText={setGuestName}
-          style={styles.input}
-        />
-
-        <Text style={[styles.label, { marginTop: 16 }]}>Guest Meal</Text>
-        <TextInput
-          value={guestMeal}
-          onChangeText={setGuestMeal}
-          style={styles.input}
-        />
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>Allergies</Text>
-        <TextInput
-          placeholder="comma-separated (e.g., peanuts, gluten)"
-          value={allergies.join(', ')}
-          onChangeText={(val) =>
-            setAllergies(val.split(',').map((s) => s.trim()))
-          }
-          style={styles.input}
-        />
+        <Text style={styles.label}>Allergies?</Text>
+        <View style={styles.pillContainer}>
+          {['Yes', 'No'].map((opt) => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => setHasAllergies(opt === 'Yes')}
+              style={[styles.pill, hasAllergies === (opt === 'Yes') && styles.pillSelected]}
+            >
+              <Text style={hasAllergies === (opt === 'Yes') ? styles.pillTextSelected : styles.pillText}>{opt}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {hasAllergies && (
+          <TextInput
+            placeholder="Comma-separated allergies"
+            value={allergies}
+            onChangeText={setAllergies}
+            style={styles.input}
+          />
+        )}
       </View>
 
       <View style={styles.buttonRow}>
         <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
           <Text style={styles.buttonText}>Cancel</Text>
         </TouchableOpacity>
-
         <TouchableOpacity
           style={[styles.submitBtn, loading && { opacity: 0.6 }]}
-          onPress={submit}
+          onPress={handleSubmit}
           disabled={loading}
         >
-          <Text style={styles.buttonText}>
-            {loading ? 'Submitting…' : 'Submit'}
-          </Text>
+          <Text style={styles.buttonText}>{loading ? 'Submitting…' : 'Submit'}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -259,56 +252,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 6,
   },
-  required: {
-    color: 'red',
-  },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 10,
     padding: 10,
     fontSize: 15,
-  },
-  hint: {
-    fontSize: 13,
-    color: '#666',
-    marginTop: 10,
+    backgroundColor: '#fff',
   },
   pillContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
+    gap: 10,
+    marginTop: 10,
   },
   pill: {
-    backgroundColor: '#e0f0ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
-    marginTop: 6,
+    backgroundColor: '#eee',
+  },
+  pillSelected: {
+    backgroundColor: '#c1e1c1',
   },
   pillText: {
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  warning: {
-    color: '#c00',
-    fontSize: 12,
-    marginTop: 6,
-  },
-  drink: {
-    fontSize: 16,
     color: '#333',
   },
-  selectedDrink: {
-    fontSize: 16,
+  pillTextSelected: {
     fontWeight: 'bold',
     color: '#2e7d32',
-  },
-  roomServiceText: {
-    fontSize: 16,
-    marginTop: 8,
   },
   buttonRow: {
     flexDirection: 'row',

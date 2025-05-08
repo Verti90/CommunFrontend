@@ -20,9 +20,12 @@ export default function MealSelectionScreen() {
   const [roomService, setRoomService] = useState(false);
   const [guestEnabled, setGuestEnabled] = useState(false);
   const [guestName, setGuestName] = useState('');
-  const [guestMeal, setGuestMeal] = useState('');
+  const [guestMain, setGuestMain] = useState('');
+  const [guestSide, setGuestSide] = useState('');
+  const [guestDrink, setGuestDrink] = useState('');
   const [hasAllergies, setHasAllergies] = useState(false);
   const [allergies, setAllergies] = useState('');
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -43,6 +46,7 @@ export default function MealSelectionScreen() {
   const [mealTime] = useState(passedMealTime);
 
   const drinkOptions = ['Coffee', 'OJ', 'Milk', 'Tea', 'Water', 'None'];
+  const commonAllergens = ['Dairy', 'Eggs', 'Gluten', 'Peanuts', 'Tree Nuts', 'Soy', 'Shellfish', 'Fish', 'Sesame'];
 
   const categorizedItems = {
     'Main Course': [],
@@ -80,8 +84,10 @@ export default function MealSelectionScreen() {
           drinks: [drink],
           room_service: roomService,
           guest_name: guestEnabled ? guestName : '',
-          guest_meal: guestEnabled ? guestMeal : '',
-          allergies: hasAllergies ? allergies.split(',').map((s) => s.trim()) : [],
+          guest_meal: guestEnabled ? `Main: ${guestMain}, Side: ${guestSide}, Drink: ${guestDrink}` : '',
+          allergies: hasAllergies
+            ? [...selectedAllergens, ...allergies.split(',').map((s) => s.trim())].filter(Boolean)
+            : [],
         },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -173,18 +179,32 @@ export default function MealSelectionScreen() {
         </View>
         {guestEnabled && (
           <>
-            <TextInput
-              placeholder="Guest Name"
-              value={guestName}
-              onChangeText={setGuestName}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Guest Meal"
-              value={guestMeal}
-              onChangeText={setGuestMeal}
-              style={[styles.input, { marginTop: 10 }]}
-            />
+<TextInput
+  placeholder="Guest Name"
+  value={guestName}
+  onChangeText={setGuestName}
+  style={styles.input}
+/>
+
+{renderDynamicCategory('Guest Main Course', categorizedItems['Main Course'], guestMain, setGuestMain)}
+{renderDynamicCategory('Guest Side', categorizedItems['Sides'], guestSide, setGuestSide)}
+
+<View style={{ marginTop: 12 }}>
+  <Text style={styles.label}>Guest Drink</Text>
+  <View style={styles.pillContainer}>
+    {drinkOptions.map((opt) => (
+      <TouchableOpacity
+        key={`guest-drink-${opt}`}
+        onPress={() => setGuestDrink(opt)}
+        style={[styles.pill, guestDrink === opt && styles.pillSelected]}
+      >
+        <Text style={guestDrink === opt ? styles.pillTextSelected : styles.pillText}>
+          {opt}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </View>
+</View>
           </>
         )}
       </View>
@@ -202,14 +222,46 @@ export default function MealSelectionScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        {hasAllergies && (
-          <TextInput
-            placeholder="Comma-separated allergies"
-            value={allergies}
-            onChangeText={setAllergies}
-            style={styles.input}
-          />
-        )}
+{hasAllergies && (
+  <>
+    <Text style={styles.label}>Select Common Allergies</Text>
+    <View style={styles.pillContainer}>
+      {commonAllergens.map((item) => (
+        <TouchableOpacity
+          key={item}
+          onPress={() =>
+            setSelectedAllergens((prev) =>
+              prev.includes(item)
+                ? prev.filter((a) => a !== item)
+                : [...prev, item]
+            )
+          }
+          style={[
+            styles.pill,
+            selectedAllergens.includes(item) && styles.pillSelected,
+          ]}
+        >
+          <Text
+            style={
+              selectedAllergens.includes(item)
+                ? styles.pillTextSelected
+                : styles.pillText
+            }
+          >
+            {item}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+    <Text style={[styles.label, { marginTop: 12 }]}>Other Allergies</Text>
+    <TextInput
+      placeholder="Comma-separated other allergies"
+      value={allergies}
+      onChangeText={setAllergies}
+      style={styles.input}
+    />
+  </>
+)}
       </View>
 
       <View style={styles.buttonRow}>

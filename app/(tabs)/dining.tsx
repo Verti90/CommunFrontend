@@ -119,42 +119,49 @@ export default function Dining() {
         ) : (
           <Text style={styles.itemText}>(No selections made)</Text>
         )}
-
+  
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-          <TouchableOpacity
-            style={styles.selectionButton}
-            onPress={() =>
-              router.push({
-                pathname: '/meal-selection',
-                params: {
-                  mealTime: meal.meal_type,
-                  items: JSON.stringify(meal.items),
-                },
-              })
-            }
-          >
-            <Text style={styles.buttonText}>Make Selections →</Text>
-          </TouchableOpacity>
+          {!selection && (
+            <View style={{ flex: 1 }}>
+              <TouchableOpacity
+                style={styles.selectionButton}
+                onPress={() =>
+                  router.push({
+                    pathname: '/meal-selection',
+                    params: {
+                      mealTime: meal.meal_type,
+                      items: JSON.stringify(meal.items),
+                    },
+                  })
+                }
+              >
+                <Text style={styles.buttonText}>Make Selections →</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {selection && (
-            <TouchableOpacity
-              style={[styles.selectionButton, { marginLeft: 12 }]}
-              onPress={async () => {
-                try {
-                  await apiClient.delete(`/meals/${selection.id}/`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
-                  Alert.alert('Selection canceled');
-                  fetchUpcomingMeals();
-                } catch (err) {
-                  Alert.alert('Error', 'Could not cancel your selection.');
-                }
-              }}
-            >
-              <Text style={[styles.buttonText, { color: '#FFEAEA', fontWeight: 'bold' }]}>
-                ❌ Cancel Selection
-              </Text>
-            </TouchableOpacity>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <TouchableOpacity
+                style={styles.selectionButton}
+                onPress={async () => {
+                  try {
+                    await apiClient.delete(`/meals/${selection.id}/`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    Alert.alert('Selection canceled');
+                    await fetchUpcomingMeals();
+                    await fetchMeals(date);
+                  } catch (err) {
+                    Alert.alert('Error', 'Could not cancel your selection.');
+                  }
+                }}
+              >
+                <Text style={[styles.buttonText, { color: '#FFEAEA', fontWeight: 'bold' }]}>
+                  ← Cancel Selections
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
       </View>

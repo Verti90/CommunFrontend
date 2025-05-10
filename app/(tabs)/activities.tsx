@@ -138,96 +138,173 @@ export default function WeeklyActivities() {
       </View>
 
       <View style={styles.grid}>
-        {daysOfWeek.map((day) => (
-          <View key={day} style={styles.dayBox}>
-            <Text style={styles.dayHeader}>{day}</Text>
-            {groupedActivities[day].length === 0 ? (
-              <Text style={styles.noActivity}>No activities</Text>
-            ) : (
-              groupedActivities[day].map((activity) => {
-                const joined = user?.id && activity.participants.includes(user.id);
-                console.log(`[Resident View] ${activity.name} | ${activity.date_time} | ${activity.participants.length}/${activity.capacity}`);
-                return (
-                  <View
-                    key={`${activity.id}-${activity.date_time}`}
-                    style={[styles.activityCard, joined && styles.signedUpCard]}
-                  >
-                    <Text style={styles.activityText}>{format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}</Text>
-                    <Text style={styles.locationText}>📍 {activity.location}</Text>
-                    {activity.capacity > 0 && (
-                    <Text style={styles.locationText}>
-                  {activity.participants.length}/{activity.capacity} signed up
-                    </Text>
-                  )}
-                  {activity.capacity > 0 && activity.participants.length >= activity.capacity && !joined && (
-                    <Text style={{ color: 'gray', marginTop: 4 }}>[FULL]</Text>
-                  )}
-                    {joined ? (
-                      <TouchableOpacity style={styles.cancelButton} onPress={() => handleUnregister(activity.id, activity.date_time)}>
-                        <Text style={styles.cancelText}>×</Text>
-                      </TouchableOpacity>
-                    ) : (
-                      <TouchableOpacity onPress={() => handleSignup(activity.id, activity.date_time)}>
-                        <Text style={styles.signupLink}>Sign Up</Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                );
-              })
-            )}
-          </View>
-        ))}
+        {daysOfWeek.map((day, index) => {
+          const dateForDay = format(addDays(getWeekRange(currentDate).start, index), 'MMM d');
+          return (
+            <View key={day} style={styles.dayBox}>
+              <Text style={styles.dayHeader}>
+                {day} <Text style={styles.dateText}>{dateForDay}</Text>
+              </Text>
+              {groupedActivities[day].length === 0 ? (
+                <Text style={styles.noActivity}>No activities</Text>
+              ) : (
+                groupedActivities[day].map((activity) => {
+                  const joined = user?.id && activity.participants.includes(user.id);
+                  console.log(`[Resident View] ${activity.name} | ${activity.date_time} | ${activity.participants.length}/${activity.capacity}`);
+                  return (
+                    <View
+                      key={`${activity.id}-${activity.date_time}`}
+                      style={[styles.activityCard, joined && styles.signedUpCard]}
+                    >
+                      <Text style={styles.activityText}>
+                        {format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}
+                      </Text>
+                      <Text style={styles.locationText}>📍 {activity.location}</Text>
+                      {activity.capacity > 0 && (
+                        <Text style={styles.locationText}>
+                          {activity.participants.length}/{activity.capacity} signed up
+                        </Text>
+                      )}
+                      {activity.capacity > 0 &&
+                        activity.participants.length >= activity.capacity &&
+                        !joined && (
+                          <Text style={{ color: 'gray', marginTop: 4 }}>[FULL]</Text>
+                        )}
+                      {joined ? (
+                        <TouchableOpacity
+                          style={styles.cancelButton}
+                          onPress={() => handleUnregister(activity.id, activity.date_time)}
+                        >
+                          <Text style={styles.cancelText}>×</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity onPress={() => handleSignup(activity.id, activity.date_time)}>
+                          <Text style={styles.signupLink}>Sign Up</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          );
+        })}
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: '#F3F3E7' },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  navButton: { backgroundColor: '#c8b6a6', padding: 10, borderRadius: 10 },
-  navText: { color: 'white', fontWeight: 'bold' },
-  weekLabel: { fontSize: 16, fontWeight: 'bold' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  container: {
+    padding: 16,
+    backgroundColor: '#F3F3E7',
+  },
+  title: {
+    fontSize: 34,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  navButton: {
+    backgroundColor: '#c8b6a6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  navText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  weekLabel: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
   dayBox: {
     width: '48%',
     backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 12,
-    marginBottom: 10,
-    minHeight: 140,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 16,
+    minHeight: 160,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 2,
   },
-  dayHeader: { fontSize: 18, fontWeight: '600', borderBottomWidth: 1, borderColor: '#ddd', marginBottom: 5 },
+  dayHeader: {
+    fontSize: 22,
+    fontWeight: '700',
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 8,
+  },
+  dateText: {
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#666',
+  },
+
   activityCard: {
-    marginTop: 8,
+    marginTop: 10,
     backgroundColor: '#f9f9f9',
-    borderRadius: 8,
-    padding: 6,
+    borderRadius: 10,
+    padding: 12,
     position: 'relative',
   },
   signedUpCard: {
     backgroundColor: '#d1f7d6',
   },
-  activityText: { fontSize: 14, fontWeight: '500' },
-  locationText: { fontSize: 13, color: '#555' },
-  signupLink: { color: '#007AFF', marginTop: 4 },
+  activityText: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  locationText: {
+    fontSize: 16,
+    color: '#555',
+  },
+  signupLink: {
+    color: '#007AFF',
+    marginTop: 6,
+    fontSize: 16,
+  },
+
   cancelButton: {
     position: 'absolute',
     top: 4,
     right: 6,
     backgroundColor: '#e74c3c',
     borderRadius: 12,
-    width: 20,
-    height: 20,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelText: { color: 'white', fontWeight: 'bold', fontSize: 14, lineHeight: 18 },
-  noActivity: { fontStyle: 'italic', color: '#aaa', marginTop: 8 },
+  cancelText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 18,
+    lineHeight: 20,
+  },
+
+  noActivity: {
+    fontSize: 16,
+    fontStyle: 'italic',
+    color: '#aaa',
+    marginTop: 12,
+  },
 });

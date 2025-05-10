@@ -204,17 +204,6 @@ export default function StaffActivities() {
                     >
                       <Text style={styles.deleteText}>Delete</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                    style={styles.editButton}
-                    onPress={() =>
-                      router.push({
-                        pathname: '/edit-activity',
-                        params: { activityId: activity.id.toString() },
-                      })
-                    }
-                  >
-                    <Text style={styles.editText}>Edit</Text>
-                  </TouchableOpacity>
                   </View>
                 );
               })
@@ -322,31 +311,86 @@ export default function StaffActivities() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: '#f0f0e5' },
-  title: { fontSize: 26, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
-  addButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 10, marginBottom: 10 },
-  addButtonText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
-  navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  navButton: { backgroundColor: '#999', padding: 10, borderRadius: 10 },
-  navText: { color: 'white' },
-  weekLabel: { fontSize: 16, fontWeight: 'bold' },
+  container: { padding: 14, backgroundColor: '#f0f0e5' },
+  title: { fontSize: 34, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  addButton: { backgroundColor: '#27ae60', padding: 16, borderRadius: 12, marginBottom: 16 },
+  addButtonText: { color: 'white', fontWeight: 'bold', fontSize: 20, textAlign: 'center' },
+
+  navigationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 18,
+  },
+  navButton: { backgroundColor: '#999', padding: 12, borderRadius: 10 },
+  navText: { color: 'white', fontSize: 16, fontWeight: 'bold' },
+  weekLabel: { fontSize: 18, fontWeight: 'bold' },
+
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  dayBox: { width: '48%', backgroundColor: 'white', borderRadius: 16, padding: 12, marginBottom: 10, minHeight: 140 },
-  dayHeader: { fontSize: 18, fontWeight: '600', borderBottomWidth: 1, borderColor: '#ddd', marginBottom: 5 },
-  activityCard: { marginTop: 8, backgroundColor: '#f9f9f9', borderRadius: 8, padding: 6 },
-  activityText: { fontSize: 14, fontWeight: '500' },
-  locationText: { fontSize: 13, color: '#555' },
-  deleteButton: { marginTop: 5, backgroundColor: '#e74c3c', padding: 5, borderRadius: 5 },
-  deleteText: { color: 'white', textAlign: 'center' },
-  editButton: { marginTop: 5, backgroundColor: '#2980b9', padding: 5, borderRadius: 5 },
-  editText: { color: 'white', textAlign: 'center' },
-  noActivity: { fontStyle: 'italic', color: '#aaa', marginTop: 8 },
-  modalContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#f3f0e9' },
-  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, marginBottom: 10 },
-  modalButton: { backgroundColor: '#2f80ed', padding: 12, borderRadius: 6, marginTop: 10 },
-  modalButtonText: { color: 'white', fontWeight: 'bold', textAlign: 'center' },
+  dayBox: {
+    width: '48%',
+    backgroundColor: 'white',
+    borderRadius: 18,
+    padding: 14,
+    marginBottom: 14,
+    minHeight: 160,
+  },
+  dayHeader: {
+    fontSize: 22,
+    fontWeight: '700',
+    borderBottomWidth: 1,
+    borderColor: '#ddd',
+    marginBottom: 8,
+  },
+
+  activityCard: {
+    marginTop: 10,
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    padding: 10,
+  },
+  activityText: { fontSize: 18, fontWeight: '600' },
+  locationText: { fontSize: 16, color: '#555' },
+
+  deleteButton: {
+    marginTop: 8,
+    backgroundColor: '#e74c3c',
+    padding: 10,
+    borderRadius: 6,
+  },
+  deleteText: { color: 'white', fontSize: 16, textAlign: 'center' },
+
+  noActivity: { fontSize: 16, fontStyle: 'italic', color: '#aaa', marginTop: 10 },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 24,
+    backgroundColor: '#f3f0e9',
+  },
+  modalTitle: { fontSize: 28, fontWeight: 'bold', marginBottom: 24, textAlign: 'center' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    marginBottom: 12,
+  },
+  modalButton: {
+    backgroundColor: '#2f80ed',
+    padding: 14,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  modalButtonText: { fontSize: 18, color: 'white', fontWeight: 'bold', textAlign: 'center' },
   cancelButton: { backgroundColor: '#999' },
-  addDayButton: { backgroundColor: '#27ae60', padding: 6, borderRadius: 8, marginTop: 10 },
-  addDayButtonText: { color: 'white', fontSize: 13, textAlign: 'center' },
+
+  addDayButton: {
+    backgroundColor: '#27ae60',
+    padding: 10,
+    borderRadius: 10,
+    marginTop: 12,
+  },
+  addDayButtonText: { color: 'white', fontSize: 16, textAlign: 'center' },
 });

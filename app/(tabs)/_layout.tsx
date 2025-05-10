@@ -6,7 +6,17 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: '#007AFF',
-        tabBarLabelStyle: { fontSize: 12 },
+        tabBarLabelStyle: {
+          fontSize: 18,
+          fontWeight: 'bold',
+        },
+        tabBarIconStyle: {
+          marginTop: 4,
+        },
+        tabBarStyle: {
+          height: 70,
+          paddingBottom: 8,
+        },
         headerShown: false,
       }}
     >
@@ -14,8 +24,8 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" color={color} size={28} />
           ),
         }}
       />
@@ -23,15 +33,19 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-circle-outline" color={color} size={size} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-circle-outline" color={color} size={28} />
           ),
         }}
       />
-      {/* Hide the rest explicitly */}
+
+      {/* Hidden routes */}
       <Tabs.Screen name="manage-dining" options={{ href: null }} />
       <Tabs.Screen name="admin" options={{ href: null }} />
       <Tabs.Screen name="manage-activities" options={{ href: null }} />
+      <Tabs.Screen name="manage-maintenance" options={{ href: null }} />
+      <Tabs.Screen name="manage-transportation" options={{ href: null }} />
+      <Tabs.Screen name="manage-wellness" options={{ href: null }} />
       <Tabs.Screen name="dining" options={{ href: null }} />
       <Tabs.Screen name="activities" options={{ href: null }} />
       <Tabs.Screen name="maintenance" options={{ href: null }} />

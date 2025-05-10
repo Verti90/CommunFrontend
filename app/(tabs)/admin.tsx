@@ -4,14 +4,22 @@ import { View, Text, StyleSheet } from 'react-native';
 export default function Admin() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>Activities Screen</Text>
+      <Text style={styles.title}>Admin Panel</Text>
+      {/* Add admin controls or navigation here */}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, justifyContent: 'center', alignItems: 'center'
+    flex: 1,
+    backgroundColor: '#F3F3E7',
+    padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  text: { fontSize: 20 }
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+  },
 });

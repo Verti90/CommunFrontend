@@ -27,14 +27,15 @@ export default function HomeScreen() {
 
   const isStaff = user?.role === 'staff';
 
-  const icons = [
-    ...(isStaff ? [{ name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' }] : []),
-    { name: 'Dining', label: isStaff ? 'Manage Dining' : 'Dining', source: require('@assets/images/dining.png'), route: isStaff ? 'manage-dining' : 'dining' },
-    { name: 'Activities', label: isStaff ? 'Manage Activities' : 'Activities', source: require('@assets/images/activities.png'), route: isStaff ? 'manage-activities' : 'activities' },
-    { name: 'Maintenance', label: 'Maintenance', source: require('@assets/images/maintenance.png'), route: 'maintenance' },
-    { name: 'Transportation', label: 'Transportation', source: require('@assets/images/transportation.png'), route: 'transportation' },
-    { name: 'Wellness', label: 'Wellness', source: require('@assets/images/wellness.png'), route: 'wellness' },
-  ].sort((a, b) => a.label.localeCompare(b.label));
+const icons = [
+  ...(isStaff ? [{ name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' }] : []),
+  { name: 'Dining', label: isStaff ? 'Manage Dining' : 'Dining', source: require('@assets/images/dining.png'), route: isStaff ? 'manage-dining' : 'dining' },
+  { name: 'Activities', label: isStaff ? 'Manage Activities' : 'Activities', source: require('@assets/images/activities.png'), route: isStaff ? 'manage-activities' : 'activities' },
+  { name: 'Maintenance', label: isStaff ? 'Manage Maintenance' : 'Maintenance', source: require('@assets/images/maintenance.png'), route: isStaff ? 'manage-maintenance' : 'maintenance' },
+  { name: 'Transportation', label: isStaff ? 'Manage Transportation' : 'Transportation', source: require('@assets/images/transportation.png'), route: isStaff ? 'manage-transportation' : 'transportation' },
+  { name: 'Wellness', label: isStaff ? 'Manage Wellness' : 'Wellness', source: require('@assets/images/wellness.png'), route: isStaff ? 'manage-wellness' : 'wellness' },
+].sort((a, b) => a.label.localeCompare(b.label));
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>

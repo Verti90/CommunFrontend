@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 
@@ -61,9 +61,9 @@ export default function ProfileScreen() {
     );
   }
 
-  return (
- <View style={styles.container}>
-  <Text style={styles.title}>Profile</Text>
+    return (
+      <ScrollView contentContainerStyle={styles.container}>
+        <Text style={styles.title}>Profile</Text>
 
   <View style={styles.fieldGroup}>
     <Text style={styles.label}>First Name</Text>
@@ -145,17 +145,18 @@ export default function ProfileScreen() {
   <TouchableOpacity style={styles.logoutButton} onPress={logout}>
     <Text style={styles.logoutText}>Logout</Text>
   </TouchableOpacity>
-</View>
+</ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     backgroundColor: '#F3F3E7',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 40,

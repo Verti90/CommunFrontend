@@ -12,6 +12,20 @@ export default function HomeScreen() {
   const [fullName, setFullName] = useState('Resident');
   const [roomNumber, setRoomNumber] = useState('');
 
+  const [announcements, setAnnouncements] = useState([
+  {
+    id: 1,
+    title: 'Bingo Night 🎉',
+    content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!',
+  },
+  {
+    id: 2,
+    title: 'Flu Shots Available 💉',
+    content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.',
+  },
+]);
+
+
 useFocusEffect(
   useCallback(() => {
     const fetchProfile = async () => {
@@ -34,37 +48,64 @@ useFocusEffect(
   const isStaff = user?.role === 'staff';
 
 const icons = [
-  ...(isStaff ? [{ name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' }] : []),
+  { name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' },
   { name: 'Dining', label: isStaff ? 'Manage Dining' : 'Dining', source: require('@assets/images/dining.png'), route: isStaff ? 'manage-dining' : 'dining' },
   { name: 'Activities', label: isStaff ? 'Manage Activities' : 'Activities', source: require('@assets/images/activities.png'), route: isStaff ? 'manage-activities' : 'activities' },
-  { name: 'Maintenance', label: isStaff ? 'Manage Maintenance' : 'Maintenance', source: require('@assets/images/maintenance.png'), route: isStaff ? 'manage-maintenance' : 'maintenance' },
+  { name: 'Maintenance', label: isStaff ? 'Manage Maintenance' : 'Maintenance & Housekeeping', source: require('@assets/images/maintenance.png'), route: isStaff ? 'manage-maintenance' : 'maintenance' },
   { name: 'Transportation', label: isStaff ? 'Manage Transportation' : 'Transportation', source: require('@assets/images/transportation.png'), route: isStaff ? 'manage-transportation' : 'transportation' },
   { name: 'Wellness', label: isStaff ? 'Manage Wellness' : 'Wellness', source: require('@assets/images/wellness.png'), route: isStaff ? 'manage-wellness' : 'wellness' },
 ].sort((a, b) => a.label.localeCompare(b.label));
 
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.welcome}>Welcome, {fullName}!</Text>
-      {!isStaff && roomNumber ? (
+return (
+  <ScrollView contentContainerStyle={styles.container}>
+    <Text style={styles.welcome}>Welcome, {fullName}!</Text>
+
+    {!isStaff && roomNumber && (
       <Text style={styles.room}>Room Number: {roomNumber}</Text>
-    ) : null}
-      <Text style={styles.title}>Aravah Senior Living</Text>
-      {icons.map((icon) => (
-        <TouchableOpacity
-          key={icon.name}
-          style={styles.barButton}
-          onPress={() => router.push(`/${icon.route}`)}
+    )}
+
+    <Text style={styles.title}>Aravah Senior Living</Text>
+
+    {icons.map((icon) => (
+      <TouchableOpacity
+        key={icon.name}
+        style={styles.barButton}
+        onPress={() => router.push(`/${icon.route}`)}
+      >
+        <View style={styles.barContent}>
+          <Image source={icon.source} style={styles.barIcon} />
+          <Text style={styles.barLabel}>{icon.label}</Text>
+          <Ionicons name="chevron-forward" size={28} color="#777" style={styles.chevron} />
+        </View>
+      </TouchableOpacity>
+    ))}
+
+    <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 30, marginBottom: 10, textAlign: 'center' }}>
+      Community Announcements
+    </Text>
+
+    <View style={{ paddingHorizontal: 10 }}>
+      {announcements.map((item) => (
+        <View
+          key={item.id}
+          style={{
+            backgroundColor: '#fff',
+            padding: 15,
+            borderRadius: 10,
+            marginBottom: 15,
+            elevation: 2,
+          }}
         >
-          <View style={styles.barContent}>
-            <Image source={icon.source} style={styles.barIcon} />
-            <Text style={styles.barLabel}>{icon.label}</Text>
-            <Ionicons name="chevron-forward" size={28} color="#777" style={styles.chevron} />
-          </View>
-        </TouchableOpacity>
+          <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 6 }}>
+            {item.title}
+          </Text>
+          <Text style={{ fontSize: 15, color: '#333' }}>{item.content}</Text>
+        </View>
       ))}
-    </ScrollView>
-  );
+    </View>
+  </ScrollView>
+);
 }
 
 const styles = StyleSheet.create({

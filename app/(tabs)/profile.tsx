@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 
@@ -9,11 +9,14 @@ interface UserProfile {
   email: string;
   first_name: string;
   last_name: string;
+  room_number?: string;
 }
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [originalProfile, setOriginalProfile] = useState<UserProfile | null>(null);
   const { token, logout } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -24,6 +27,7 @@ export default function ProfileScreen() {
           },
         });
         setProfile(response.data);
+        setOriginalProfile(response.data);
       } catch (error) {
         if (error.response && error.response.status === 401) {
           Alert.alert(
@@ -58,25 +62,90 @@ export default function ProfileScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
+ <View style={styles.container}>
+  <Text style={styles.title}>Profile</Text>
 
-      <Text style={styles.label}>First Name:</Text>
-      <Text style={styles.value}>{profile.first_name}</Text>
+  <View style={styles.fieldGroup}>
+    <Text style={styles.label}>First Name</Text>
+    <Text style={styles.value}>{profile.first_name}</Text>
 
-      <Text style={styles.label}>Last Name:</Text>
-      <Text style={styles.value}>{profile.last_name}</Text>
+    <Text style={styles.label}>Last Name</Text>
+    <Text style={styles.value}>{profile.last_name}</Text>
 
-      <Text style={styles.label}>Username:</Text>
-      <Text style={styles.value}>{profile.username}</Text>
+    <Text style={styles.label}>Username</Text>
+    <Text style={styles.value}>{profile.username}</Text>
 
-      <Text style={styles.label}>Email:</Text>
-      <Text style={styles.value}>{profile.email}</Text>
+    <Text style={styles.label}>Email</Text>
+    <TextInput
+      style={[styles.emailInput, !isEditing && { backgroundColor: '#eee' }]}
+      value={profile.email}
+      editable={isEditing}
+      onChangeText={(text) =>
+        setProfile((prev) => prev ? { ...prev, email: text } : prev)
+      }
+      keyboardType="email-address"
+      placeholder="Enter email"
+    />
 
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-    </View>
+    <Text style={styles.label}>Room Number</Text>
+    <TextInput
+      style={[styles.roomInput, !isEditing && { backgroundColor: '#eee' }]}
+      value={profile.room_number || ''}
+      editable={isEditing}
+      onChangeText={(text) =>
+        setProfile((prev) => prev ? { ...prev, room_number: text } : prev)
+      }
+      keyboardType="numeric"
+      placeholder="Enter room"
+    />
+  </View>
+
+  <TouchableOpacity
+    style={styles.saveButton}
+    onPress={async () => {
+      if (!isEditing) {
+        setIsEditing(true);
+        return;
+      }
+      try {
+        await apiClient.post(
+          'profile/preferences/',
+          {
+            email: profile.email,
+            ...(profile.room_number !== undefined && profile.room_number !== ''
+              ? { room_number: profile.room_number }
+              : {}),
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        Alert.alert('Success', 'Profile updated.');
+        setOriginalProfile(profile);
+        setIsEditing(false);
+      } catch (error) {
+        console.error('Update failed:', error);
+        Alert.alert('Error', 'Failed to update profile.');
+      }
+    }}
+  >
+    <Text style={styles.saveText}>{isEditing ? 'Save' : 'Edit'}</Text>
+  </TouchableOpacity>
+
+{isEditing && (
+  <TouchableOpacity
+    style={[styles.saveButton, { backgroundColor: '#aaa', marginTop: 10 }]}
+    onPress={() => {
+      setProfile(originalProfile);
+      setIsEditing(false);
+    }}
+  >
+    <Text style={styles.saveText}>Cancel</Text>
+  </TouchableOpacity>
+)}
+
+  <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+    <Text style={styles.logoutText}>Logout</Text>
+  </TouchableOpacity>
+</View>
   );
 }
 
@@ -89,34 +158,81 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 40,
+    marginBottom: 30,
     textAlign: 'center',
   },
+  fieldGroup: {
+    width: '100%',
+    alignItems: 'center',
+  },
   label: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '600',
-    marginTop: 16,
+    marginTop: 20,
+    textAlign: 'center',
   },
   value: {
+    fontSize: 26,
+    marginBottom: 12,
+    textAlign: 'center',
+    color: '#444',
+  },
+  emailInput: {
+    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    fontSize: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 8,
+    marginBottom: 16,
+    width: '80%',
+    textAlign: 'center',
+  },
+  roomInput: {
+    backgroundColor: '#fff',
+    borderColor: '#ccc',
+    borderWidth: 1,
+    borderRadius: 10,
+    fontSize: 24,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginTop: 8,
+    marginBottom: 16,
+    width: '20%',
+    textAlign: 'center',
+  },
+  saveButton: {
+    backgroundColor: '#3498db',
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 10,
+    marginTop: 24,
+  },
+  saveText: {
+    color: '#fff',
     fontSize: 22,
-    marginBottom: 10,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   logoutButton: {
     marginTop: 40,
     backgroundColor: '#FF6B6B',
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    borderRadius: 10,
+    paddingVertical: 18,
+    paddingHorizontal: 44,
+    borderRadius: 12,
   },
   logoutText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   loadingText: {
-    fontSize: 22,
+    fontSize: 26,
     color: '#777',
+    textAlign: 'center',
   },
 });

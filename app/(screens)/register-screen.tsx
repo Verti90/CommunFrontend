@@ -26,6 +26,7 @@ const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [roomNumber, setRoomNumber] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -50,6 +51,7 @@ const RegisterScreen = () => {
         password,
         first_name: firstName,
         last_name: lastName,
+        room_number: roomNumber,
       });
       Alert.alert('Registration Successful', 'You can now log in');
       router.push('/login');
@@ -123,6 +125,14 @@ const RegisterScreen = () => {
               autoCapitalize="none"
               keyboardType="email-address"
               placeholder="Enter email"
+            />
+
+            <Text style={styles.label}>Room Number</Text>
+            <TextInput
+              style={styles.input}
+              value={roomNumber}
+              onChangeText={setRoomNumber}
+              placeholder="Enter room number"
             />
 
             <Text style={styles.label}>Password</Text>

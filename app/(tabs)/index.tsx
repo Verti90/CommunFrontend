@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
@@ -27,71 +28,31 @@ export default function HomeScreen() {
   const isStaff = user?.role === 'staff';
 
   const icons = [
-    ...(isStaff
-      ? [
-          {
-            name: 'Admin',
-            label: 'Admin',
-            source: require('@assets/images/Admin.jpg'),
-            route: 'admin',
-          },
-          {
-            name: 'ManageMenus',
-            label: 'Manage Menus',
-            source: require('@assets/images/icon-manage-menus.png'),
-            route: 'manage-menus',
-          },
-        ]
-      : [
-          {
-            name: 'Dining',
-            label: 'Dining',
-            source: require('@assets/images/Dining.jpg'),
-            route: 'dining',
-          },
-        ]),
-    {
-      name: 'Activities',
-      label: isStaff ? 'Manage Activities' : 'Activities',
-      source: require('@assets/images/Activities.jpg'),
-      route: isStaff ? 'manage-activities' : 'activities',
-    },
-    {
-      name: 'Maintenance',
-      label: 'Maintenance',
-      source: require('@assets/images/Maintenance.jpg'),
-      route: 'maintenance',
-    },
-    {
-      name: 'Transportation',
-      label: 'Transportation',
-      source: require('@assets/images/Transportation.jpg'),
-      route: 'transportation',
-    },
-    {
-      name: 'Wellness',
-      label: 'Wellness',
-      source: require('@assets/images/Wellness.jpg'),
-      route: 'wellness',
-    },
-  ];
+    ...(isStaff ? [{ name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' }] : []),
+    { name: 'Dining', label: isStaff ? 'Manage Dining' : 'Dining', source: require('@assets/images/dining.png'), route: isStaff ? 'manage-dining' : 'dining' },
+    { name: 'Activities', label: isStaff ? 'Manage Activities' : 'Activities', source: require('@assets/images/activities.png'), route: isStaff ? 'manage-activities' : 'activities' },
+    { name: 'Maintenance', label: 'Maintenance', source: require('@assets/images/maintenance.png'), route: 'maintenance' },
+    { name: 'Transportation', label: 'Transportation', source: require('@assets/images/transportation.png'), route: 'transportation' },
+    { name: 'Wellness', label: 'Wellness', source: require('@assets/images/wellness.png'), route: 'wellness' },
+  ].sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.welcome}>Welcome, {fullName}!</Text>
       <Text style={styles.title}>Aravah Senior Living</Text>
-      <View style={styles.iconContainer}>
-        {icons.map((icon) => (
-          <TouchableOpacity
-            key={icon.name}
-            style={styles.iconButton}
-            onPress={() => router.push(`/${icon.route}`)}
-          >
-            <Image source={icon.source} style={styles.iconImage} />
-            <Text>{icon.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {icons.map((icon) => (
+        <TouchableOpacity
+          key={icon.name}
+          style={styles.barButton}
+          onPress={() => router.push(`/${icon.route}`)}
+        >
+          <View style={styles.barContent}>
+            <Image source={icon.source} style={styles.barIcon} />
+            <Text style={styles.barLabel}>{icon.label}</Text>
+            <Ionicons name="chevron-forward" size={28} color="#777" style={styles.chevron} />
+          </View>
+        </TouchableOpacity>
+      ))}
     </ScrollView>
   );
 }
@@ -99,37 +60,47 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    alignItems: 'center',
     paddingVertical: 20,
-    backgroundColor: '#f0f0e5',
+    backgroundColor: '#F3F3E7',
+    paddingHorizontal: 10,
   },
   welcome: {
-    fontSize: 24,
+    fontSize: 28,
     marginBottom: 10,
+    textAlign: 'center',
   },
   title: {
-    fontSize: 30,
+    fontSize: 34,
     fontWeight: 'bold',
-    marginBottom: 20,
+    marginBottom: 30,
+    textAlign: 'center',
   },
-  iconContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-  },
-  iconButton: {
-    width: '40%',
-    padding: 10,
-    margin: 10,
-    alignItems: 'center',
+  barButton: {
     backgroundColor: '#ffffff',
-    borderRadius: 15,
-    elevation: 3,
+    borderRadius: 12,
+    marginBottom: 20,
+    paddingVertical: 25,
+    paddingHorizontal: 25,
+    elevation: 4,
   },
-  iconImage: {
-    width: 50,
-    height: 50,
+  barContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  barIcon: {
+    width: 40,
+    height: 40,
     resizeMode: 'contain',
-    marginBottom: 10,
+    marginRight: 20,
+  },
+  barLabel: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#222',
+    flex: 1,
+  },
+  chevron: {
+    marginLeft: 10,
   },
 });

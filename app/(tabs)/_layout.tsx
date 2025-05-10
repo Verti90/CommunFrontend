@@ -29,7 +29,7 @@ export default function TabLayout() {
         }}
       />
       {/* Hide the rest explicitly */}
-      <Tabs.Screen name="manage-menus" options={{ href: null }} />
+      <Tabs.Screen name="manage-dining" options={{ href: null }} />
       <Tabs.Screen name="admin" options={{ href: null }} />
       <Tabs.Screen name="manage-activities" options={{ href: null }} />
       <Tabs.Screen name="dining" options={{ href: null }} />

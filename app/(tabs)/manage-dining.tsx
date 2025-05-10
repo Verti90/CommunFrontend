@@ -165,7 +165,7 @@ export default function AddDailyMenuScreen() {
   
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Manage Menus</Text>
+      <Text style={styles.title}>Manage Dining</Text>
 
       <View style={styles.card}>
         <Text style={styles.label}>Date</Text>

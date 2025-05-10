@@ -183,7 +183,7 @@ export default function WeeklyActivities() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 10, backgroundColor: '#f3f0e9' },
+  container: { padding: 10, backgroundColor: '#F3F3E7' },
   title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 10 },
   navigationContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
   navButton: { backgroundColor: '#c8b6a6', padding: 10, borderRadius: 10 },

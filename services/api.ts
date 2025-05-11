@@ -1,81 +1,60 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router'; // for logout/redirect
+import { router } from 'expo-router';
 
-const apiClient = axios.create({
-  baseURL: 'http://192.168.4.91:8000/api/',
+// Use your static IP or domain name here
+const API_BASE_URL = 'http://192.168.4.91:8000/api/';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
 });
 
-let isRefreshing = false;
-type QueueItem = {
-  resolve: (value?: unknown) => void;
-  reject: (reason?: any) => void;
-};
-
-let failedQueue: QueueItem[] = [];
-
-const processQueue = (error: any, token: string | null = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
+// Attach token before every request
+api.interceptors.request.use(
+  async (config) => {
+    const token = await AsyncStorage.getItem('@Auth:token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-  });
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-  failedQueue = [];
-};
-
-apiClient.interceptors.response.use(
-  response => response,
-  async error => {
+// Handle 401 errors and try to refresh token once
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
     const originalRequest = error.config;
 
     if (
       error.response?.status === 401 &&
-      !originalRequest._retry &&
-      !originalRequest.url.includes('/login') &&
-      !originalRequest.url.includes('/token/refresh/')
+      !originalRequest._retry
     ) {
       originalRequest._retry = true;
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then(token => {
-            originalRequest.headers['Authorization'] = `Bearer ${token}`;
-            return apiClient(originalRequest);
-          })
-          .catch(err => Promise.reject(err));
-      }
-
-      isRefreshing = true;
-
       try {
         const refreshToken = await AsyncStorage.getItem('@Auth:refreshToken');
+        if (!refreshToken) throw new Error('No refresh token');
 
-        if (!refreshToken) throw new Error('No refresh token found');
+        const refreshResponse = await axios.post(
+          `${API_BASE_URL}token/refresh/`,
+          { refresh: refreshToken }
+        );
 
-        const response = await axios.post('http://192.168.4.91:8000/api/token/refresh/', {
-          refresh: refreshToken,
-        });
+        const newAccessToken = refreshResponse.data.access;
+        await AsyncStorage.setItem('@Auth:token', newAccessToken);
 
-        const { access } = response.data;
-        await AsyncStorage.setItem('@Auth:token', access);
-
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${access}`;
-        originalRequest.headers['Authorization'] = `Bearer ${access}`;
-
-        processQueue(null, access);
-        return apiClient(originalRequest);
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
-        await AsyncStorage.clear();
-        router.replace('/login'); // ✅ redirect after failed refresh
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
+        console.warn('🔁 Token refresh failed. Logging out...');
+        await AsyncStorage.multiRemove([
+          '@Auth:token',
+          '@Auth:refreshToken',
+          '@Auth:user',
+        ]);
+        router.replace('/login');
       }
     }
 
@@ -83,4 +62,4 @@ apiClient.interceptors.response.use(
   }
 );
 
-export default apiClient;
+export default api;

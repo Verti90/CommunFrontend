@@ -79,7 +79,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setToken(access);
       setUser(user);
-      api.defaults.headers.common['Authorization'] = `Bearer ${access}`;
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
       await AsyncStorage.setItem('@Auth:token', access);

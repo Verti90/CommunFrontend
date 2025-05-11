@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, ScrollView } from 'react-native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
+import { fetchProfile } from '@utils/fetchProfile';
 
 interface UserProfile {
   id: number;
@@ -18,40 +19,21 @@ export default function ProfileScreen() {
   const { token, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
 
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('profile/', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setProfile(response.data);
-        setOriginalProfile(response.data);
-      } catch (error) {
-        if (error.response && error.response.status === 401) {
-          Alert.alert(
-            "Session Expired",
-            "Your session has expired, please log back in.",
-            [
-              {
-                text: "OK",
-                onPress: () => logout(),
-              },
-            ]
-          );
-        } else {
-          console.error('Error fetching profile:', error);
-          if (error.response) {
-            console.error('Response data:', error.response.data);
-            console.error('Response status:', error.response.status);
-          }
-        }
-      }
-    };
+useEffect(() => {
+  const loadProfile = async () => {
+    try {
+      const { first_name, last_name, room_number, username, email } = await fetchProfile(token);
+      const userProfile = { first_name, last_name, room_number, username, email, id: 0 };
+      setProfile(userProfile);
+      setOriginalProfile(userProfile);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      Alert.alert('Error', 'Unable to load your profile.');
+    }
+  };
+  loadProfile();
+}, [token, logout]);
 
-    fetchProfile();
-  }, [token, logout]);
 
   if (!profile) {
     return (
@@ -122,8 +104,8 @@ export default function ProfileScreen() {
         setOriginalProfile(profile);
         setIsEditing(false);
       } catch (error) {
-        console.error('Update failed:', error);
-        Alert.alert('Error', 'Failed to update profile.');
+        console.error('Error fetching profile:', error);
+        Alert.alert('Error', 'Unable to load your profile. Please try again later.');
       }
     }}
   >
@@ -147,7 +129,7 @@ export default function ProfileScreen() {
   </TouchableOpacity>
 </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {

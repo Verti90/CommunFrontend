@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
+import { fetchProfile } from '@utils/fetchProfile';
 
 const MaintenanceScreen = () => {
   const { token, logout } = useAuth();
@@ -17,14 +18,11 @@ const MaintenanceScreen = () => {
 
 useFocusEffect(
   useCallback(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('/profile/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const { first_name, last_name, room_number } = response.data;
-        setProfile({ first_name, last_name, room_number });
-      } catch (error) {
+      const loadProfile = async () => {
+        try {
+          const { first_name, last_name, room_number } = await fetchProfile(token);
+          setProfile({ first_name, last_name, room_number });
+        } catch (error) {
         if (error.response?.status === 401) {
           Alert.alert('Session Expired', 'Please log in again.', [{ text: 'OK', onPress: logout }]);
         } else {
@@ -33,7 +31,7 @@ useFocusEffect(
       }
     };
 
-    fetchProfile();
+    loadProfile();
     setSelectedRequest(null);
     setDescription('');
   }, [token])
@@ -130,7 +128,7 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   header: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: 'bold',
     marginBottom: 24,
     textAlign: 'center',

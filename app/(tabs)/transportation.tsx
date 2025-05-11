@@ -6,6 +6,7 @@ import apiClient from '@services/api';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
+import { fetchProfile } from '@utils/fetchProfile';
 
 export default function Transportation() {
   const { token, logout } = useAuth();
@@ -28,12 +29,9 @@ export default function Transportation() {
 
 useFocusEffect(
   useCallback(() => {
-    const fetchProfile = async () => {
+    const loadProfile = async () => {
       try {
-        const response = await apiClient.get('/profile/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const { first_name, last_name, room_number } = response.data;
+        const { first_name, last_name, room_number } = await fetchProfile(token);
         setProfile({ first_name, last_name, room_number });
       } catch (error) {
         if (error.response?.status === 401) {
@@ -44,7 +42,7 @@ useFocusEffect(
       }
     };
 
-    fetchProfile();
+    loadProfile();
     setSelectedRequest(null);
     setDoctorName('');
     setAppointmentTime('');

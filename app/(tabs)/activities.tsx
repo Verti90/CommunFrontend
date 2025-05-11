@@ -124,7 +124,7 @@ export default function WeeklyActivities() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Weekly Schedule</Text>
+      <Text style={styles.title}>Weekly Activities Schedule</Text>
       <View style={styles.navigationContainer}>
         <TouchableOpacity style={styles.navButton} onPress={() => changeWeek(-1)}>
           <Text style={styles.navText}>Previous Week</Text>
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   dayHeader: {
-    fontSize: 22,
+    fontSize: 34,
     fontWeight: '700',
     borderBottomWidth: 1,
     borderColor: '#ddd',

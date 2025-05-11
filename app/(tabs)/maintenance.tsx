@@ -34,6 +34,8 @@ useFocusEffect(
     };
 
     fetchProfile();
+    setSelectedRequest(null);
+    setDescription('');
   }, [token])
 );
 

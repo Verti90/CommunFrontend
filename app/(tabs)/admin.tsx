@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   subtitle: {
-    fontSize: 24,
+    fontSize: 34,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',

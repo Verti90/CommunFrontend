@@ -70,6 +70,7 @@ export default function Dining() {
 
   return (
     <ScrollView style={styles.container}>
+      <Text style={styles.header}>Dining</Text>
       <TouchableOpacity
         onPress={() => setShowDatePicker(true)}
         style={styles.dateButton}
@@ -242,5 +243,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textDecorationLine: 'underline',
     marginTop: 15,
+  },
+  header: {
+  fontSize: 34,
+  fontWeight: 'bold',
+  marginBottom: 20,
+  textAlign: 'center',
+  color: '#333',
   },
 });

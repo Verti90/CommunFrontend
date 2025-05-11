@@ -34,30 +34,29 @@ export default function WeeklyActivities() {
     fetchActivities(currentDate);
   }, [currentDate, token]);
 
-  const fetchActivities = async (date: Date) => {
-    const now = new Date();
-    const twoMonthsAhead = addMonths(now, 2);
+const fetchActivities = async (date: Date) => {
+  const now = new Date();
+  const twoMonthsAhead = addMonths(now, 2);
 
-    if (date > twoMonthsAhead) {
-      Alert.alert('Error', 'You can only view activities up to two months ahead.');
-      return;
-    }
+  if (date > twoMonthsAhead) {
+    Alert.alert('Error', 'You can only view activities up to two months ahead.');
+    return;
+  }
 
-    const { start, end } = getWeekRange(date);
-    const startStr = format(start, 'yyyy-MM-dd');
-    const endStr = format(end, 'yyyy-MM-dd');
+  const { start, end } = getWeekRange(date);
+  const startStr = format(start, 'yyyy-MM-dd');
+  const endStr = format(end, 'yyyy-MM-dd');
 
-    try {
-      const response = await apiClient.get(`activities/?start_date=${startStr}&end_date=${endStr}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setActivities(response.data);
-    } catch (error) {
-      Alert.alert('Error', 'Could not fetch activities.');
-    }
-  };
+  try {
+    const response = await apiClient.get(`activities/?start_date=${startStr}&end_date=${endStr}`);
+    setActivities(response.data);
+  } catch (error) {
+    console.error('Failed to fetch activities', error);
+    Alert.alert('Error', 'Failed to fetch activities.');
+  }
+};
 
-  const groupByDay = (): Record<string, Activity[]> => {
+    const groupByDay = (): Record<string, Activity[]> => {
     const map: Record<string, Activity[]> = {
       Monday: [],
       Tuesday: [],
@@ -80,35 +79,23 @@ export default function WeeklyActivities() {
   };
 
   const handleSignup = async (activityId: number, occurrence_date: string) => {
-    try {
-      await apiClient.post(`/activities/${activityId}/signup/`, { occurrence_date }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      Alert.alert('Success', 'You signed up for the activity!');
-      await sendImmediateNotification(
-        'Activity Signup Confirmed',
-        'You’re signed up! Don’t forget your activity.'
-      );
-      setTimeout(() => fetchActivities(currentDate), 500);
-    } catch (error) {
-      Alert.alert('Error', 'Unable to sign up.');
-    }
+    await apiClient.post(`/activities/${activityId}/signup/`, { occurrence_date });
+    Alert.alert('Success', 'You signed up for the activity!');
+    await sendImmediateNotification(
+      'Activity Signup Confirmed',
+      'You’re signed up! Don’t forget your activity.'
+    );
+    setTimeout(() => fetchActivities(currentDate), 500);
   };
 
   const handleUnregister = async (activityId: number, occurrence_date: string) => {
-    try {
-      await apiClient.post(`/activities/${activityId}/unregister/`, { occurrence_date }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      Alert.alert('Success', 'You unregistered from the activity.');
-      await sendImmediateNotification(
-        'Activity Unregistered',
-        'You’ve been removed from this activity.'
-      );
-      setTimeout(() => fetchActivities(currentDate), 500);
-    } catch (error) {
-      Alert.alert('Error', 'Unable to unregister.');
-    }
+    await apiClient.post(`/activities/${activityId}/unregister/`, { occurrence_date });
+    Alert.alert('Success', 'You unregistered from the activity.');
+    await sendImmediateNotification(
+      'Activity Unregistered',
+      'You’ve been removed from this activity.'
+    );
+    setTimeout(() => fetchActivities(currentDate), 500);
   };
 
   const changeWeek = (direction: number) => {

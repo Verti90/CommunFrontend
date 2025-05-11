@@ -51,16 +51,11 @@ export default function Dining() {
       const formattedDate = formatDateLocal(selectedDate);
       const response = await apiClient.get('/daily-menus/', {
         params: { date: formattedDate },
-        headers: { Authorization: `Bearer ${token}` },
       });
       setMeals(response.data);
     } catch (error) {
-      console.error('Error fetching meals:', error);
-      if (error.response?.status === 401) {
-        Alert.alert("Session Expired", "Your session has expired, please log back in.", [
-          { text: "OK", onPress: () => logout() }
-        ]);
-      }
+      if (__DEV__) console.warn('❌ Error fetching meals:', error);
+      // Optional: Alert.alert('Error', 'Could not fetch meals.');
     }
   };
 
@@ -69,124 +64,127 @@ export default function Dining() {
     fetchUpcomingMeals();
   }, [token, logout, date]);
 
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Dining</Text>
-      <TouchableOpacity
-        onPress={() => setShowDatePicker(true)}
-        style={styles.dateButton}
-      >
-        <Text style={styles.dateText}>Meals for {formatDateLocal(date)} (Tap to change)</Text>
-      </TouchableOpacity>
+return (
+  <ScrollView style={styles.container}>
+    <Text style={styles.header}>Dining</Text>
 
-      <DateTimePickerModal
-        isVisible={showDatePicker}
-        mode="date"
-        date={date}
-        onConfirm={(selected) => {
-          setDate(selected);
-          setShowDatePicker(false);
-        }}
-        onCancel={() => setShowDatePicker(false)}
-      />
+    <TouchableOpacity
+      onPress={() => setShowDatePicker(true)}
+      style={styles.dateButton}
+    >
+      <Text style={styles.dateText}>
+        Meals for {formatDateLocal(date)} (Tap to change)
+      </Text>
+    </TouchableOpacity>
 
-{meals.map((meal) => {
-  const selection = upcomingSelections.find(
-    (sel) =>
-      sel.meal_time.toLowerCase() === meal.meal_type.toLowerCase() &&
-      new Date(sel.created_at).toDateString() === date.toDateString()
-  );
+    <DateTimePickerModal
+      isVisible={showDatePicker}
+      mode="date"
+      date={date}
+      onConfirm={(selected) => {
+        setDate(selected);
+        setShowDatePicker(false);
+      }}
+      onCancel={() => setShowDatePicker(false)}
+    />
 
-  return (
-    <View key={meal.id} style={styles.mealContainer}>
-      <Text style={styles.mealType}>{meal.meal_type}</Text>
-      <View style={styles.mealCard}>
-        {selection ? (
-          <>
-            <Text style={styles.itemText}>Main: {selection.main_item}</Text>
-            <Text style={styles.itemText}>Side: {selection.protein}</Text>
-            <Text style={styles.itemText}>
-              Drink: {Array.isArray(selection.drinks) ? selection.drinks[0] || 'None' : selection.drinks || 'None'}
-            </Text>
-            <Text style={styles.itemText}>
-              Room Service: {selection.room_service ? 'Yes' : 'No'}
-            </Text>
-            <Text style={styles.itemText}>
-              Add Guest: {selection.guest_name ? `Yes (${selection.guest_name} - ${selection.guest_meal})` : 'No'}
-            </Text>
-            <Text style={styles.itemText}>
-              Allergies: {selection.allergies?.length > 0 ? selection.allergies.join(', ') : 'No'}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.itemText}>(No selections made)</Text>
-        )}
-  
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
-          {!selection && (
-            <View style={{ flex: 1 }}>
-              <TouchableOpacity
-                style={styles.selectionButton}
-                onPress={() =>
-                  router.push({
-                    pathname: '/meal-selection',
-                    params: {
-                      mealTime: meal.meal_type,
-                      items: JSON.stringify(meal.items),
-                    },
-                  })
-                }
-              >
-                <Text style={styles.buttonText}>Make Selections →</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+    {meals.map((meal) => {
+      const selection = upcomingSelections.find(
+        (sel) =>
+          sel.meal_time.toLowerCase() === meal.meal_type.toLowerCase() &&
+          new Date(sel.created_at).toDateString() === date.toDateString()
+      );
 
-          {selection && (
-            <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <TouchableOpacity
-                style={styles.selectionButton}
-                onPress={async () => {
-                  try {
-                    await apiClient.delete(`/meals/${selection.id}/`, {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    Alert.alert('Selection canceled');
-                    await sendImmediateNotification(
-                      'Dining Selection Canceled',
-                      'Your meal selection has been removed.'
-                    );
-                    await fetchUpcomingMeals();
-                    await fetchMeals(date);
-                  } catch (err) {
-                    Alert.alert('Error', 'Could not cancel your selection.');
-                  }
-                }}
-              >
-                <Text style={[styles.buttonText, { color: '#FFEAEA', fontWeight: 'bold' }]}>
-                  ← Cancel Selections
+      return (
+        <View key={meal.id} style={styles.mealContainer}>
+          <Text style={styles.mealType}>{meal.meal_type}</Text>
+          <View style={styles.mealCard}>
+            {selection ? (
+              <>
+                <Text style={styles.itemText}>Main: {selection.main_item}</Text>
+                <Text style={styles.itemText}>Side: {selection.protein}</Text>
+                <Text style={styles.itemText}>
+                  Drink: {Array.isArray(selection.drinks) ? selection.drinks[0] || 'None' : selection.drinks || 'None'}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-      </View>
-    </View>
-  );
-})}
+                <Text style={styles.itemText}>
+                  Room Service: {selection.room_service ? 'Yes' : 'No'}
+                </Text>
+                <Text style={styles.itemText}>
+                  Add Guest: {selection.guest_name ? `Yes (${selection.guest_name} - ${selection.guest_meal})` : 'No'}
+                </Text>
+                <Text style={styles.itemText}>
+                  Allergies: {selection.allergies?.length > 0 ? selection.allergies.join(', ') : 'No'}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.itemText}>(No selections made)</Text>
+            )}
 
-<TouchableOpacity
-  onPress={() =>
-    Alert.alert(
-      'Always Available Menu',
-      'Toast\nCereal\nYogurt\nCoffee\nTea\nWater'
-    )
-  }
->
-  <Text style={styles.viewMenu}>View always available menu</Text>
-</TouchableOpacity>
-</ScrollView>
-  );
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
+              {!selection && (
+                <View style={{ flex: 1 }}>
+                  <TouchableOpacity
+                    style={styles.selectionButton}
+                    onPress={() =>
+                      router.push({
+                        pathname: '/meal-selection',
+                        params: {
+                          mealTime: meal.meal_type,
+                          items: JSON.stringify(meal.items),
+                        },
+                      })
+                    }
+                  >
+                    <Text style={styles.buttonText}>Make Selections →</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {selection && (
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <TouchableOpacity
+                    style={styles.selectionButton}
+                    onPress={async () => {
+                      try {
+                        await apiClient.delete(`/meals/${selection.id}/`);
+                        Alert.alert('Selection canceled');
+                        await sendImmediateNotification(
+                          'Dining Selection Canceled',
+                          'Your meal selection has been removed.'
+                        );
+                        await fetchUpcomingMeals();
+                        await fetchMeals(date);
+                      } catch (err) {
+                        if (__DEV__) console.warn('❌ Failed to cancel meal selection:', err);
+                        Alert.alert('Error', 'Could not cancel your selection.');
+                      }
+                    }}
+                  >
+                    <Text style={[styles.buttonText, { color: '#FFEAEA', fontWeight: 'bold' }]}>
+                      ← Cancel Selections
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </View>
+      );
+    })}
+
+    {/* Always Available Menu */}
+    <TouchableOpacity
+      onPress={() =>
+        Alert.alert(
+          'Always Available Menu',
+          'Toast\nCereal\nYogurt\nCoffee\nTea\nWater'
+        )
+      }
+    >
+      <Text style={styles.viewMenu}>View always available menu</Text>
+    </TouchableOpacity>
+  </ScrollView>
+);
 }
 
 const styles = StyleSheet.create({

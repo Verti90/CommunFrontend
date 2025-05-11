@@ -2,6 +2,7 @@ import { Stack, router } from 'expo-router';
 import { AuthProvider, useAuth } from '@auth';
 import { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
+import Toast from 'react-native-toast-message';
 
 function InnerLayout() {
   const { loading, token } = useAuth();
@@ -38,7 +39,10 @@ function InnerLayout() {
 export default function Layout() {
   return (
     <AuthProvider>
-      <InnerLayout />
+      <>
+        <InnerLayout />
+        <Toast />
+      </>
     </AuthProvider>
   );
 }

@@ -18,16 +18,14 @@ const MaintenanceScreen = () => {
 
 useFocusEffect(
   useCallback(() => {
-      const loadProfile = async () => {
-        try {
-          const { first_name, last_name, room_number } = await fetchProfile(token);
-          setProfile({ first_name, last_name, room_number });
-        } catch (error) {
-        if (error.response?.status === 401) {
-          Alert.alert('Session Expired', 'Please log in again.', [{ text: 'OK', onPress: logout }]);
-        } else {
-          Alert.alert('Error', 'Could not load profile.');
-        }
+    const loadProfile = async () => {
+      try {
+        const { first_name, last_name, room_number } = await fetchProfile(token);
+        setProfile({ first_name, last_name, room_number });
+      } catch (error) {
+        if (__DEV__) console.warn('❌ Failed to load profile:', error);
+        // Optional: show fallback alert
+        // Alert.alert('Error', 'Could not load profile.');
       }
     };
 
@@ -57,9 +55,7 @@ useFocusEffect(
     };
 
     try {
-      await apiClient.post('/maintenance/', requestData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await apiClient.post('/maintenance/', requestData);
       Alert.alert('Success', 'Your request has been submitted.');
       setSelectedRequest(null);
       setDescription('');

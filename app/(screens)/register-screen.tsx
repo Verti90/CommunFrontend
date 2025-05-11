@@ -27,6 +27,7 @@ const RegisterScreen = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [roomNumber, setRoomNumber] = useState('');
+  const [loading, setLoading] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const router = useRouter();
 
@@ -38,39 +39,43 @@ const RegisterScreen = () => {
     }).start();
   }, []);
 
-  const handleRegister = async () => {
-    if (password !== confirmPassword) {
-      Alert.alert('Registration Error', 'Passwords do not match');
-      return;
-    }
+const handleRegister = async () => {
+  if (password !== confirmPassword) {
+    Alert.alert('Registration Error', 'Passwords do not match');
+    return;
+  }
 
-    try {
-      await apiClient.post('/register/', {
-        username,
-        email,
-        password,
-        first_name: firstName,
-        last_name: lastName,
-        room_number: roomNumber,
-      });
-      Alert.alert('Registration Successful', 'You can now log in');
-      router.push('/login');
-    } catch (error) {
-      console.error('Registration error:', error);
-      if (error.response) {
-        const data = error.response.data;
-        if (data.username?.includes('A user with that username already exists.')) {
-          Alert.alert('Registration Error', 'Username already exists. Please choose another.');
-        } else if (data.email?.includes('user with this email address already exists.')) {
-          Alert.alert('Registration Error', 'Email already exists. Please use a different email address.');
-        } else {
-          Alert.alert('Registration Error', `Error: ${JSON.stringify(data)}`);
-        }
+  setLoading(true);
+  try {
+    await apiClient.post('/register/', {
+      username,
+      email,
+      password,
+      first_name: firstName,
+      last_name: lastName,
+      room_number: roomNumber,
+    });
+    Alert.alert('Registration Successful', 'You can now log in');
+    router.push('/login');
+  } catch (error: any) {
+    if (__DEV__) console.log('Registration error:', error);
+    if (error.response) {
+      const data = error.response.data;
+      if (data.username?.includes('A user with that username already exists.')) {
+        Alert.alert('Registration Error', 'Username already exists. Please choose another.');
+      } else if (data.email?.includes('user with this email address already exists.')) {
+        Alert.alert('Registration Error', 'Email already exists. Please use a different email address.');
       } else {
-        Alert.alert('Registration Error', 'An unexpected error occurred.');
+        const firstError = Object.values(data)[0]?.[0] || 'Please check your input.';
+        Alert.alert('Registration Error', firstError);
       }
+    } else {
+      Alert.alert('Registration Error', 'An unexpected error occurred.');
     }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <KeyboardAvoidingView
@@ -153,8 +158,12 @@ const RegisterScreen = () => {
               placeholder="Confirm password"
             />
 
-            <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
-              <Text style={styles.buttonText}>Register</Text>
+            <TouchableOpacity
+              style={styles.registerButton}
+              onPress={handleRegister}
+              disabled={loading}
+            >
+              <Text style={styles.buttonText}>{loading ? 'Registering...' : 'Register'}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

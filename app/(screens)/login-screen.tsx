@@ -20,14 +20,6 @@ const LoginScreen = () => {
   const router = useRouter();
   const { login } = useAuth();
   const { token } = useAuth();
-
-  useEffect(() => {
-    if (token) {
-      console.log('✅ Already logged in — redirecting to /');
-      router.replace('/');
-    }
-  }, [token]);
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -50,21 +42,21 @@ const LoginScreen = () => {
     loadRememberedCredentials();
   }, []);
 
-  const handleLogin = async () => {
-    const success = await login(username, password);
-    if (success) {
-      if (rememberMe) {
-        await AsyncStorage.setItem('rememberedUsername', username);
-        await AsyncStorage.setItem('rememberedPassword', password);
-      } else {
-        await AsyncStorage.removeItem('rememberedUsername');
-        await AsyncStorage.removeItem('rememberedPassword');
-      }
-    } else {
-      Alert.alert('Login Failed', 'Invalid username or password.');
-    }
-  };
+const handleLogin = async () => {
+  try {
+    await login(username, password);
 
+    if (rememberMe) {
+      await AsyncStorage.setItem('rememberedUsername', username);
+      await AsyncStorage.setItem('rememberedPassword', password);
+    } else {
+      await AsyncStorage.removeItem('rememberedUsername');
+      await AsyncStorage.removeItem('rememberedPassword');
+    }
+  } catch (error: any) {
+    Alert.alert('Login Failed', error.message);
+  }
+};
     const handleRegister = () => {
       router.push('/register');
   };

@@ -20,60 +20,43 @@ export default function HomeScreen() {
     Notifications.requestPermissionsAsync();
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      const fetchEverything = async () => {
-        try {
-          // Fetch profile
-          const profileResponse = await apiClient.get('profile/', {
-            headers: { Authorization: `Bearer ${token}` },
+useFocusEffect(
+  useCallback(() => {
+    const fetchEverything = async () => {
+      if (!token) return; // Skip fetch if token is missing (user logged out)
+
+      try {
+        const profileResponse = await apiClient.get('profile/');
+        const { first_name, last_name, room_number } = profileResponse.data;
+        setFullName(`${first_name} ${last_name}`);
+        setRoomNumber(room_number || '');
+
+        const newAnnouncements = [
+          { id: 1, title: 'Bingo Night 🎉', content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!' },
+          { id: 2, title: 'Flu Shots Available 💉', content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.' },
+          { id: 3, title: 'New Book Club 📚', content: 'Join us Tuesday at 3 PM in the library for the new reading club.' },
+        ];
+
+        const newOnly = newAnnouncements.filter(a => !previousIdsRef.current.has(a.id));
+        for (const a of newOnly) {
+          await Notifications.scheduleNotificationAsync({
+            content: { title: a.title, body: a.content, sound: true },
+            trigger: null,
           });
-          const { first_name, last_name, room_number } = profileResponse.data;
-          setFullName(`${first_name} ${last_name}`);
-          setRoomNumber(room_number || '');
-
-          // Simulated fetch of announcements (replace with real API later)
-          const newAnnouncements = [
-            {
-              id: 1,
-              title: 'Bingo Night 🎉',
-              content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!',
-            },
-            {
-              id: 2,
-              title: 'Flu Shots Available 💉',
-              content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.',
-            },
-            {
-              id: 3,
-              title: 'New Book Club 📚',
-              content: 'Join us Tuesday at 3 PM in the library for the new reading club.',
-            },
-          ];
-
-          // Notify only for new announcements
-          const newOnly = newAnnouncements.filter(a => !previousIdsRef.current.has(a.id));
-          for (const a of newOnly) {
-            await Notifications.scheduleNotificationAsync({
-              content: {
-                title: a.title,
-                body: a.content,
-                sound: true,
-              },
-              trigger: null,
-            });
-            previousIdsRef.current.add(a.id);
-          }
-
-          setAnnouncements(newAnnouncements);
-        } catch (error) {
-          console.error('Error loading Home screen data:', error);
+          previousIdsRef.current.add(a.id);
         }
-      };
 
-      fetchEverything();
-    }, [token])
-  );
+        setAnnouncements(newAnnouncements);
+      } catch (error: any) {
+        if (__DEV__) console.warn('❌ Home screen fetch failed:', error?.message || error);
+        // Optionally show a toast or alert only if token still exists
+        // Toast.show({ type: 'error', text1: 'Could not load profile' });
+      }
+    };
+
+    fetchEverything();
+  }, [token])
+);
 
   const isStaff = user?.role === 'staff';
 

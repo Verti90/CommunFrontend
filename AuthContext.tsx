@@ -54,11 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setToken(null);
         }
   
-        console.log('✅ Final loaded values:', {
-          token: storedToken,
-          refreshToken: storedRefreshToken,
-        });
-  
       } catch (error) {
         console.error('Error loading auth data:', error);
       } finally {
@@ -71,10 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
-      console.log('🔐 Attempting backend login with username:', username);
       const response = await api.post('/login/', { username, password });
-      console.log('🔐 Backend login response:', response.data);
-
       const { token: { access, refresh }, user } = response.data;
 
       setToken(access);
@@ -84,30 +76,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.setItem('@Auth:token', access);
       await AsyncStorage.setItem('@Auth:refreshToken', refresh);
 
-      console.log('✅ Navigating to Home after login');
       router.replace('/');
       return true;
-    } catch (error) {
-      console.error('❌ Login failed:', error);
-      return false;
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        throw new Error('Invalid username or password.');
+      } else {
+        throw new Error('An unexpected error occurred. Please try again.');
+      }
     }
   };
 
-  const logout = async () => {
-    await AsyncStorage.removeItem('@Auth:user');
-    await AsyncStorage.removeItem('@Auth:token');
-    await AsyncStorage.removeItem('@Auth:refreshToken');
-    setRefreshToken(null);
-    setUser(null);
-    setToken(null);
-  
-    console.log('🚪 Logged out, waiting to redirect...');
-  
-    InteractionManager.runAfterInteractions(() => {
-      console.log('✅ Redirecting to /login');
-      router.replace('/login');
-    });
-  };
+const logout = async () => {
+  await AsyncStorage.removeItem('@Auth:user');
+  await AsyncStorage.removeItem('@Auth:token');
+  await AsyncStorage.removeItem('@Auth:refreshToken');
+  setRefreshToken(null);
+  setUser(null);
+  setToken(null);
+
+  InteractionManager.runAfterInteractions(() => {
+    router.replace('/login');
+  });
+};
 
   return (
     <AuthContext.Provider value={{ user, token, refreshToken, login, logout, loading }}>

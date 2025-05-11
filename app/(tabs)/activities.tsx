@@ -7,17 +7,11 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
 import { getWeekRange } from '@utils/time';
-
-import {
-  format,
-  addDays,
-  addMonths,
-  parseISO,
-} from 'date-fns';
+import { format, addDays, addMonths, parseISO } from 'date-fns';
+import { sendImmediateNotification } from '@utils/notifications';
 
 interface Activity {
   id: number;
@@ -91,6 +85,10 @@ export default function WeeklyActivities() {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Success', 'You signed up for the activity!');
+      await sendImmediateNotification(
+        'Activity Signup Confirmed',
+        'You’re signed up! Don’t forget your activity.'
+      );
       setTimeout(() => fetchActivities(currentDate), 500);
     } catch (error) {
       Alert.alert('Error', 'Unable to sign up.');
@@ -103,6 +101,10 @@ export default function WeeklyActivities() {
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Success', 'You unregistered from the activity.');
+      await sendImmediateNotification(
+        'Activity Unregistered',
+        'You’ve been removed from this activity.'
+      );
       setTimeout(() => fetchActivities(currentDate), 500);
     } catch (error) {
       Alert.alert('Error', 'Unable to unregister.');
@@ -196,6 +198,7 @@ export default function WeeklyActivities() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     padding: 16,
     backgroundColor: '#F3F3E7',
   },

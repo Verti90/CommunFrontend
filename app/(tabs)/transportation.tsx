@@ -5,6 +5,7 @@ import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
+import { sendImmediateNotification } from '@utils/notifications';
 
 export default function Transportation() {
   const { token, logout } = useAuth();
@@ -120,6 +121,10 @@ useFocusEffect(
         headers: { Authorization: `Bearer ${token}` },
       });
       Alert.alert('Success', 'Your transportation request has been submitted.');
+      await sendImmediateNotification(
+        'Transportation Request Submitted',
+        'Your request is being processed.'
+      );
       setSelectedRequest(null);
       setDoctorName('');
       setAppointmentTime('');

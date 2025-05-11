@@ -56,6 +56,7 @@ export default function Admin() {
 
 const styles = StyleSheet.create({
   container: {
+    flexGrow: 1,
     backgroundColor: '#F3F3E7',
     padding: 20,
   },

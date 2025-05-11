@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
@@ -6,44 +6,74 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
+import * as Notifications from 'expo-notifications';
 
 export default function HomeScreen() {
   const { token, user } = useAuth();
   const [fullName, setFullName] = useState('Resident');
   const [roomNumber, setRoomNumber] = useState('');
+  const [announcements, setAnnouncements] = useState([]);
 
-  const [announcements, setAnnouncements] = useState([
-  {
-    id: 1,
-    title: 'Bingo Night 🎉',
-    content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!',
-  },
-  {
-    id: 2,
-    title: 'Flu Shots Available 💉',
-    content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.',
-  },
-]);
+  const previousIdsRef = useRef<Set<number>>(new Set());
 
+  useEffect(() => {
+    Notifications.requestPermissionsAsync();
+  }, []);
 
-useFocusEffect(
-  useCallback(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await apiClient.get('profile/', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const { first_name, last_name, room_number } = response.data;
-        setFullName(`${first_name} ${last_name}`);
-        setRoomNumber(room_number || '');
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const fetchEverything = async () => {
+        try {
+          // Fetch profile
+          const profileResponse = await apiClient.get('profile/', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const { first_name, last_name, room_number } = profileResponse.data;
+          setFullName(`${first_name} ${last_name}`);
+          setRoomNumber(room_number || '');
 
-    fetchProfile();
-  }, [token])
-);
+          // Simulated fetch of announcements (replace with real API later)
+          const newAnnouncements = [
+            {
+              id: 1,
+              title: 'Bingo Night 🎉',
+              content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!',
+            },
+            {
+              id: 2,
+              title: 'Flu Shots Available 💉',
+              content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.',
+            },
+            {
+              id: 3,
+              title: 'New Book Club 📚',
+              content: 'Join us Tuesday at 3 PM in the library for the new reading club.',
+            },
+          ];
+
+          // Notify only for new announcements
+          const newOnly = newAnnouncements.filter(a => !previousIdsRef.current.has(a.id));
+          for (const a of newOnly) {
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: a.title,
+                body: a.content,
+                sound: true,
+              },
+              trigger: null,
+            });
+            previousIdsRef.current.add(a.id);
+          }
+
+          setAnnouncements(newAnnouncements);
+        } catch (error) {
+          console.error('Error loading Home screen data:', error);
+        }
+      };
+
+      fetchEverything();
+    }, [token])
+  );
 
   const isStaff = user?.role === 'staff';
 

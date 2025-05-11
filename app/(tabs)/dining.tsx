@@ -5,6 +5,7 @@ import { formatDateLocal } from '@utils/time';
 import apiClient from '@services/api';
 import { useRouter } from 'expo-router';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { sendImmediateNotification } from '@utils/notifications';
 
 interface Meal {
   id: number;
@@ -151,6 +152,10 @@ export default function Dining() {
                       headers: { Authorization: `Bearer ${token}` },
                     });
                     Alert.alert('Selection canceled');
+                    await sendImmediateNotification(
+                      'Dining Selection Canceled',
+                      'Your meal selection has been removed.'
+                    );
                     await fetchUpcomingMeals();
                     await fetchMeals(date);
                   } catch (err) {

@@ -19,16 +19,19 @@ const LoginScreen = () => {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const { login } = useAuth();
-  const { token } = useAuth();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
 
   useEffect(() => {
-    const loadRememberedCredentials = async () => {
+    (async () => {
       try {
-        const savedUsername = await AsyncStorage.getItem('rememberedUsername');
-        const savedPassword = await AsyncStorage.getItem('rememberedPassword');
+        const [savedUsername, savedPassword] = await Promise.all([
+          AsyncStorage.getItem('rememberedUsername'),
+          AsyncStorage.getItem('rememberedPassword'),
+        ]);
+
         if (savedUsername && savedPassword) {
           setUsername(savedUsername);
           setPassword(savedPassword);
@@ -37,28 +40,26 @@ const LoginScreen = () => {
       } catch (error) {
         console.error('Error loading remembered credentials:', error);
       }
-    };
-
-    loadRememberedCredentials();
+    })();
   }, []);
 
-const handleLogin = async () => {
-  try {
-    await login(username, password);
+  const handleLogin = async () => {
+    try {
+      await login(username, password);
 
-    if (rememberMe) {
-      await AsyncStorage.setItem('rememberedUsername', username);
-      await AsyncStorage.setItem('rememberedPassword', password);
-    } else {
-      await AsyncStorage.removeItem('rememberedUsername');
-      await AsyncStorage.removeItem('rememberedPassword');
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberedUsername', username);
+        await AsyncStorage.setItem('rememberedPassword', password);
+      } else {
+        await AsyncStorage.multiRemove(['rememberedUsername', 'rememberedPassword']);
+      }
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message || 'An unexpected error occurred.');
     }
-  } catch (error: any) {
-    Alert.alert('Login Failed', error.message);
-  }
-};
-    const handleRegister = () => {
-      router.push('/register');
+  };
+
+  const handleRegister = () => {
+    router.push('/register');
   };
 
   return (

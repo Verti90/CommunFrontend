@@ -34,7 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedUser = await AsyncStorage.getItem('@Auth:user');
         const storedToken = await AsyncStorage.getItem('@Auth:token');
         const storedRefreshToken = await AsyncStorage.getItem('@Auth:refreshToken');
-  
+
         if (storedUser && storedToken && storedRefreshToken) {
           try {
             const parsedUser = JSON.parse(storedUser);
@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await AsyncStorage.removeItem('@Auth:user');
             setUser(null);
           }
-        
+
           setToken(storedToken);
           setRefreshToken(storedRefreshToken);
           api.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
@@ -53,16 +53,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
           setToken(null);
         }
-  
       } catch (error) {
         console.error('Error loading auth data:', error);
       } finally {
         setLoading(false);
       }
     };
-  
+
     loadStoredData();
-  }, []); 
+  }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
     try {
@@ -70,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { token: { access, refresh }, user } = response.data;
 
       setToken(access);
+      setRefreshToken(refresh);
       setUser(user);
 
       await AsyncStorage.setItem('@Auth:user', JSON.stringify(user));
@@ -79,26 +79,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       router.replace('/');
       return true;
     } catch (error: any) {
-      if (error.response?.status === 401) {
+      console.warn('Login error:', error);
+
+      const status = error?.response?.status;
+
+      if (status === 401 || status === 400) {
         throw new Error('Invalid username or password.');
+      } else if (error?.message) {
+        throw new Error(error.message);
       } else {
         throw new Error('An unexpected error occurred. Please try again.');
       }
     }
   };
 
-const logout = async () => {
-  await AsyncStorage.removeItem('@Auth:user');
-  await AsyncStorage.removeItem('@Auth:token');
-  await AsyncStorage.removeItem('@Auth:refreshToken');
-  setRefreshToken(null);
-  setUser(null);
-  setToken(null);
+  const logout = async () => {
+    await AsyncStorage.removeItem('@Auth:user');
+    await AsyncStorage.removeItem('@Auth:token');
+    await AsyncStorage.removeItem('@Auth:refreshToken');
+    setRefreshToken(null);
+    setUser(null);
+    setToken(null);
 
-  InteractionManager.runAfterInteractions(() => {
-    router.replace('/login');
-  });
-};
+    InteractionManager.runAfterInteractions(() => {
+      router.replace('/login');
+    });
+  };
 
   return (
     <AuthContext.Provider value={{ user, token, refreshToken, login, logout, loading }}>

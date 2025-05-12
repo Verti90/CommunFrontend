@@ -1,25 +1,34 @@
 import { addDays, startOfWeek, endOfWeek } from 'date-fns';
 import moment from 'moment-timezone';
 
-// Converts local Central time to a UTC ISO string
-export const toCentralUtcISOString = (localDate: Date): string => {
-  return moment(localDate).tz('America/Chicago').utc().format();
+const CENTRAL_TZ = 'America/Chicago';
+
+/**
+ * Converts a local date to a UTC ISO string based on fixed Central Time zone.
+ * Ensures consistent behavior across environments regardless of user time zone.
+ */
+export const toCentralUtcISOString = (date: Date): string =>
+  moment(date).tz(CENTRAL_TZ).utc().format();
+
+/**
+ * Formats a date as 'YYYY-MM-DD' in Central Time for display or backend consistency.
+ */
+export const formatDateLocal = (date: Date): string =>
+  moment(date).tz(CENTRAL_TZ).format('YYYY-MM-DD');
+
+/**
+ * Returns the start and end of the week (Sunday to Saturday) for a given date.
+ */
+export const getWeekRange = (date: Date): { start: Date; end: Date } => {
+  const base = new Date(date);
+  return {
+    start: startOfWeek(base, { weekStartsOn: 0 }),
+    end: endOfWeek(base, { weekStartsOn: 0 }),
+  };
 };
 
-// Format a date in Central Time as YYYY-MM-DD
-export const formatDateLocal = (date: Date): string => {
-  return moment(date).tz('America/Chicago').format('YYYY-MM-DD');
-};
-
-// Get start and end of the week (Sunday to Saturday) for a given date
-export function getWeekRange(date: Date): { start: Date; end: Date } {
-  const start = startOfWeek(date, { weekStartsOn: 0 }); // Sunday
-  const end = endOfWeek(date, { weekStartsOn: 0 });
-  return { start, end };
-}
-
-// Get the actual date for a specific weekday index (0 = Sunday)
-export function getDateForWeekdayIndex(reference: Date, index: number): Date {
-  const { start } = getWeekRange(reference);
-  return addDays(start, index);
-}
+/**
+ * Returns the specific date for a weekday index (0 = Sunday) within the week of a given reference date.
+ */
+export const getDateForWeekdayIndex = (reference: Date, index: number): Date =>
+  addDays(getWeekRange(reference).start, index);

@@ -1,13 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert } from 'react-native'; 
+import React, { useState, useCallback } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import { fetchProfile } from '@utils/fetchProfile';
 
 const MaintenanceScreen = () => {
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
   const [profile, setProfile] = useState<{ first_name: string; last_name: string; room_number: string }>({
     first_name: '',
     last_name: '',
@@ -15,25 +14,32 @@ const MaintenanceScreen = () => {
   });
   const [selectedRequest, setSelectedRequest] = useState<'WorkOrder' | 'Housekeeping' | null>(null);
   const [description, setDescription] = useState('');
+  const [requests, setRequests] = useState<any[]>([]);
 
-useFocusEffect(
-  useCallback(() => {
-    const loadProfile = async () => {
-      try {
-        const { first_name, last_name, room_number } = await fetchProfile(token);
-        setProfile({ first_name, last_name, room_number });
-      } catch (error) {
-        if (__DEV__) console.warn('❌ Failed to load profile:', error);
-        // Optional: show fallback alert
-        // Alert.alert('Error', 'Could not load profile.');
-      }
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfile = async () => {
+        try {
+          const { first_name, last_name, room_number } = await fetchProfile(token);
+          const fullProfile = { first_name, last_name, room_number };
+          setProfile(fullProfile);
 
-    loadProfile();
-    setSelectedRequest(null);
-    setDescription('');
-  }, [token])
-);
+          const res = await apiClient.get('/maintenance/');
+          const filtered = res.data.filter(
+            (r: any) =>
+              r.resident_name === `${first_name} ${last_name}` && r.room_number === room_number
+          );
+          setRequests(filtered);
+        } catch (error) {
+          if (__DEV__) console.warn('❌ Failed to load profile or requests:', error);
+        }
+      };
+
+      loadProfile();
+      setSelectedRequest(null);
+      setDescription('');
+    }, [token])
+  );
 
   const handleSubmit = async () => {
     if (!selectedRequest) {
@@ -64,38 +70,51 @@ useFocusEffect(
     }
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Maintenance & Housekeeping</Text>
-    <View style={styles.infoBox}>
-      <Text style={styles.infoText}>
-        Name: <Text style={styles.infoValue}>{profile.first_name} {profile.last_name}</Text>
-      </Text>
-      <Text style={styles.infoText}>
-        Room Number: <Text style={styles.infoValue}>{profile.room_number}</Text>
-      </Text>
-    </View>
+  const handleCancel = async (id: number) => {
+    try {
+      await apiClient.patch(`/maintenance/${id}/`, { status: 'Cancelled' });
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      Alert.alert('Cancelled', 'Your request has been cancelled.');
+    } catch {
+      Alert.alert('Error', 'Failed to cancel request.');
+    }
+  };
 
-            <TouchableOpacity
-        style={[
-          styles.button,
-          { backgroundColor: '#26A69A' },
-          selectedRequest === 'Housekeeping' && styles.selected,
-        ]}
+  const handleDelete = async (id: number) => {
+    try {
+      await apiClient.delete(`/maintenance/${id}/`);
+      setRequests((prev) => prev.filter((r) => r.id !== id));
+      Alert.alert('Deleted', 'Closed request has been deleted.');
+    } catch {
+      Alert.alert('Error', 'Failed to delete request.');
+    }
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.header}>Maintenance & Housekeeping</Text>
+
+      <View style={styles.infoBox}>
+        <Text style={styles.infoText}>
+          Name: <Text style={styles.infoValue}>{profile.first_name} {profile.last_name}</Text>
+        </Text>
+        <Text style={styles.infoText}>
+          Room Number: <Text style={styles.infoValue}>{profile.room_number}</Text>
+        </Text>
+      </View>
+
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: '#26A69A' }, selectedRequest === 'Housekeeping' && styles.selected]}
         onPress={() => setSelectedRequest('Housekeeping')}
       >
         <Text style={styles.buttonText}>🧹 Request Housekeeping</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[
-          styles.button,
-          { backgroundColor: '#FFA726' },
-          selectedRequest === 'WorkOrder' && styles.selected,
-        ]}
+        style={[styles.button, { backgroundColor: '#FFA726' }, selectedRequest === 'WorkOrder' && styles.selected]}
         onPress={() => setSelectedRequest('WorkOrder')}
       >
-        <Text style={styles.buttonText}>🛠️ Work Order Request</Text>
+        <Text style={styles.buttonText}>🛠️ Maintenance Request</Text>
       </TouchableOpacity>
 
       {selectedRequest === 'WorkOrder' && (
@@ -113,15 +132,46 @@ useFocusEffect(
           <Text style={styles.submitButtonText}>Submit Request</Text>
         </TouchableOpacity>
       )}
-    </View>
+
+      <Text style={[styles.header, { fontSize: 26, marginTop: 40 }]}>Open Requests</Text>
+      {requests.map((req) => (
+        <View key={req.id} style={styles.infoBox}>
+          <Text style={styles.infoText}><Text style={styles.label}>Type:</Text> {req.request_type}</Text>
+          <Text style={styles.infoText}><Text style={styles.label}>Status:</Text> {req.status}</Text>
+          <Text style={styles.infoText}><Text style={styles.label}>Description:</Text> {req.description}</Text>
+          {req.staff_comment && (
+            <Text style={styles.infoText}>
+              <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
+            </Text>
+          )}
+          {req.status === 'Pending' && (
+            <TouchableOpacity
+              style={[styles.submitButton, { backgroundColor: '#D32F2F', marginTop: 10 }]}
+              onPress={() => handleCancel(req.id)}
+            >
+              <Text style={styles.submitButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          )}
+          {req.status === 'Closed' && (
+            <TouchableOpacity
+              style={[styles.submitButton, { backgroundColor: '#757575', marginTop: 10 }]}
+              onPress={() => handleDelete(req.id)}
+            >
+              <Text style={styles.submitButtonText}>Delete</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingVertical: 20,
     backgroundColor: '#F3F3E7',
-    padding: 24,
+    paddingHorizontal: 16,
   },
   header: {
     fontSize: 34,
@@ -138,9 +188,12 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   infoText: {
-    fontSize: 20,
+    fontSize: 18,
     color: '#444',
-    marginBottom: 8,
+    marginBottom: 6,
+  },
+  label: {
+    fontWeight: 'bold',
   },
   button: {
     borderRadius: 12,
@@ -164,7 +217,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   infoValue: {
-  fontWeight: 'bold',
+    fontWeight: 'bold',
   },
   textInput: {
     backgroundColor: '#ffffff',

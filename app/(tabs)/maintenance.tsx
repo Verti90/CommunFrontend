@@ -41,6 +41,22 @@ const MaintenanceScreen = () => {
     }, [token])
   );
 
+const fetchRequests = async () => {
+  try {
+    const res = await apiClient.get('/maintenance/');
+    const { first_name, last_name, room_number } = profile;
+    const filtered = res.data.filter(
+      (r: any) =>
+        r.resident_name === `${first_name} ${last_name}` &&
+        r.room_number === room_number &&
+        r.status !== 'Cancelled'
+    );
+    setRequests(filtered);
+  } catch (error) {
+    if (__DEV__) console.warn('❌ Failed to refresh requests:', error);
+  }
+};
+
   const handleSubmit = async () => {
     if (!selectedRequest) {
       Alert.alert('Selection Required', 'Please choose a request type.');
@@ -65,6 +81,7 @@ const MaintenanceScreen = () => {
       Alert.alert('Success', 'Your request has been submitted.');
       setSelectedRequest(null);
       setDescription('');
+      fetchRequests();
     } catch (error) {
       Alert.alert('Error', 'Something went wrong submitting your request.');
     }
@@ -72,9 +89,9 @@ const MaintenanceScreen = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await apiClient.patch(`/maintenance/${id}/`, { status: 'Cancelled' });
+      await apiClient.delete(`/maintenance/${id}/`);
       setRequests((prev) => prev.filter((r) => r.id !== id));
-      Alert.alert('Cancelled', 'Your request has been cancelled.');
+      Alert.alert('Cancelled', 'Your request has been removed.');
     } catch {
       Alert.alert('Error', 'Failed to cancel request.');
     }
@@ -90,80 +107,121 @@ const MaintenanceScreen = () => {
     }
   };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.header}>Maintenance & Housekeeping</Text>
+  const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Pending':
+      return '#FFD700'; // Yellow
+    case 'Completed':
+      return '#4CAF50'; // Green
+    case 'Cancelled':
+      return '#B0B0B0'; // Gray
+    default:
+      return '#777';
+  }
+};
 
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>
-          Name: <Text style={styles.infoValue}>{profile.first_name} {profile.last_name}</Text>
-        </Text>
-        <Text style={styles.infoText}>
-          Room Number: <Text style={styles.infoValue}>{profile.room_number}</Text>
-        </Text>
-      </View>
+return (
+  <ScrollView contentContainerStyle={styles.container}>
+    <Text style={styles.header}>Maintenance & Housekeeping</Text>
 
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#26A69A' }, selectedRequest === 'Housekeeping' && styles.selected]}
-        onPress={() => setSelectedRequest('Housekeeping')}
-      >
-        <Text style={styles.buttonText}>🧹 Request Housekeeping</Text>
+    {/* Resident Info */}
+    <View style={styles.infoBox}>
+      <Text style={styles.infoText}>
+        Name: <Text style={styles.infoValue}>{profile.first_name} {profile.last_name}</Text>
+      </Text>
+      <Text style={styles.infoText}>
+        Room Number: <Text style={styles.infoValue}>{profile.room_number}</Text>
+      </Text>
+    </View>
+
+    {/* Request Type Buttons */}
+    <TouchableOpacity
+      style={[styles.button, { backgroundColor: '#26A69A' }, selectedRequest === 'Housekeeping' && styles.selected]}
+      onPress={() => setSelectedRequest('Housekeeping')}
+    >
+      <Text style={styles.buttonText}>🧹 Request Housekeeping</Text>
+    </TouchableOpacity>
+
+    <TouchableOpacity
+      style={[styles.button, { backgroundColor: '#FFA726' }, selectedRequest === 'WorkOrder' && styles.selected]}
+      onPress={() => setSelectedRequest('WorkOrder')}
+    >
+      <Text style={styles.buttonText}>🛠️ Maintenance Request</Text>
+    </TouchableOpacity>
+
+    {/* Description Box for Work Orders */}
+    {selectedRequest === 'WorkOrder' && (
+      <TextInput
+        style={styles.textInput}
+        multiline
+        placeholder="Describe the issue (e.g., replace lightbulb, fix leaky faucet)"
+        value={description}
+        onChangeText={setDescription}
+      />
+    )}
+
+    {/* Submit Button */}
+    {selectedRequest && (
+      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+        <Text style={styles.submitButtonText}>Submit Request</Text>
       </TouchableOpacity>
+    )}
 
+    {/* Divider */}
+    <Text style={[styles.header, { fontSize: 26, marginTop: 40 }]}>Open Requests</Text>
+
+{/* Requests List */}
+{requests.map((req) => (
+  <View key={req.id} style={styles.infoBox}>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Type:</Text> {req.request_type}
+    </Text>
+
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Status:</Text>{' '}
+      <Text style={{ color: getStatusColor(req.status), fontWeight: 'bold' }}>
+        {req.status}
+      </Text>
+    </Text>
+
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Description:</Text> {req.description}
+    </Text>
+
+    {req.updated_at && (
+      <Text style={styles.infoText}>
+        <Text style={styles.label}>Last Updated:</Text>{' '}
+        {new Date(req.updated_at).toLocaleString()}
+      </Text>
+    )}
+
+    {req.staff_comment && (
+      <Text style={styles.infoText}>
+        <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
+      </Text>
+    )}
+
+    {req.status === 'Pending' && (
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: '#FFA726' }, selectedRequest === 'WorkOrder' && styles.selected]}
-        onPress={() => setSelectedRequest('WorkOrder')}
+        style={[styles.submitButton, { backgroundColor: '#D32F2F', marginTop: 10 }]}
+        onPress={() => handleCancel(req.id)}
       >
-        <Text style={styles.buttonText}>🛠️ Maintenance Request</Text>
+        <Text style={styles.submitButtonText}>Cancel</Text>
       </TouchableOpacity>
+    )}
 
-      {selectedRequest === 'WorkOrder' && (
-        <TextInput
-          style={styles.textInput}
-          multiline
-          placeholder="Describe the issue (e.g., replace lightbulb, fix leaky faucet)"
-          value={description}
-          onChangeText={setDescription}
-        />
-      )}
-
-      {selectedRequest && (
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>Submit Request</Text>
-        </TouchableOpacity>
-      )}
-
-      <Text style={[styles.header, { fontSize: 26, marginTop: 40 }]}>Open Requests</Text>
-      {requests.map((req) => (
-        <View key={req.id} style={styles.infoBox}>
-          <Text style={styles.infoText}><Text style={styles.label}>Type:</Text> {req.request_type}</Text>
-          <Text style={styles.infoText}><Text style={styles.label}>Status:</Text> {req.status}</Text>
-          <Text style={styles.infoText}><Text style={styles.label}>Description:</Text> {req.description}</Text>
-          {req.staff_comment && (
-            <Text style={styles.infoText}>
-              <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
-            </Text>
-          )}
-          {req.status === 'Pending' && (
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: '#D32F2F', marginTop: 10 }]}
-              onPress={() => handleCancel(req.id)}
-            >
-              <Text style={styles.submitButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          )}
-          {req.status === 'Closed' && (
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: '#757575', marginTop: 10 }]}
-              onPress={() => handleDelete(req.id)}
-            >
-              <Text style={styles.submitButtonText}>Delete</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ))}
-    </ScrollView>
-  );
+    {req.status === 'Completed' && (
+      <TouchableOpacity
+        style={[styles.submitButton, { backgroundColor: '#757575', marginTop: 10 }]}
+        onPress={() => handleDelete(req.id)}
+      >
+        <Text style={styles.submitButtonText}>Delete</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+))}
+</ScrollView>
+);
 };
 
 const styles = StyleSheet.create({

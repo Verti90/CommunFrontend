@@ -124,6 +124,19 @@ export default function Transportation() {
     }
   };
 
+  const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Pending':
+      return '#FFD700'; // Yellow
+    case 'Completed':
+      return '#4CAF50'; // Green
+    case 'Cancelled':
+      return '#B0B0B0'; // Gray (won’t show for residents)
+    default:
+      return '#777'; // Default gray
+  }
+};
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.header}>Transportation</Text>
@@ -181,49 +194,70 @@ export default function Transportation() {
         onCancel={() => setShowTimePicker(false)}
       />
 
-      <Text style={[styles.header, { fontSize: 26, marginTop: 40 }]}>Open Requests</Text>
-      {requests.map((req) => (
-        <View key={req.id} style={styles.infoBox}>
-          <Text style={styles.infoText}><Text style={styles.label}>Type:</Text> {req.request_type}</Text>
-          <Text style={styles.infoText}><Text style={styles.label}>Status:</Text> {req.status}</Text>
-          {req.request_type === 'Medical' ? (
-            <>
-              <Text style={styles.infoText}><Text style={styles.label}>Doctor:</Text> {req.doctor_name}</Text>
-              <Text style={styles.infoText}><Text style={styles.label}>Appt:</Text> {req.appointment_time}</Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.infoText}><Text style={styles.label}>Destination:</Text> {req.destination_name}</Text>
-              <Text style={styles.infoText}><Text style={styles.label}>Pickup:</Text> {req.pickup_time}</Text>
-            </>
-          )}
-          {req.address && (
-            <Text style={styles.infoText}><Text style={styles.label}>Address:</Text> {req.address}</Text>
-          )}
-          {req.staff_comment && (
-            <Text style={styles.infoText}><Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}</Text>
-          )}
-          {req.status === 'Pending' && (
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: '#D32F2F', marginTop: 10 }]}
-              onPress={() => handleCancel(req.id)}
-            >
-              <Text style={styles.submitButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          )}
-          {req.status === 'Closed' && (
-            <TouchableOpacity
-              style={[styles.submitButton, { backgroundColor: '#757575', marginTop: 10 }]}
-              onPress={() => handleDelete(req.id)}
-            >
-              <Text style={styles.submitButtonText}>Delete</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ))}
-    </ScrollView>
-  );
-}
+<Text style={[styles.header, { fontSize: 26, marginTop: 40 }]}>Open Requests</Text>
+
+{requests.map((req) => (
+  <View key={req.id} style={styles.infoBox}>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Type:</Text> {req.request_type}
+    </Text>
+
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Status:</Text>{' '}
+      <Text style={{ color: getStatusColor(req.status), fontWeight: 'bold' }}>
+        {req.status}
+      </Text>
+    </Text>
+
+    {req.request_type === 'Medical' ? (
+      <>
+        <Text style={styles.infoText}><Text style={styles.label}>Doctor:</Text> {req.doctor_name}</Text>
+        <Text style={styles.infoText}><Text style={styles.label}>Appt:</Text> {req.appointment_time}</Text>
+      </>
+    ) : (
+      <>
+        <Text style={styles.infoText}><Text style={styles.label}>Destination:</Text> {req.destination_name}</Text>
+        <Text style={styles.infoText}><Text style={styles.label}>Pickup:</Text> {req.pickup_time}</Text>
+      </>
+    )}
+
+    {req.address && (
+      <Text style={styles.infoText}>
+        <Text style={styles.label}>Address:</Text> {req.address}
+      </Text>
+    )}
+
+    {req.updated_at && (
+      <Text style={styles.infoText}>
+        <Text style={styles.label}>Last Updated:</Text> {new Date(req.updated_at).toLocaleString()}
+      </Text>
+    )}
+
+    {req.staff_comment && (
+      <Text style={styles.infoText}>
+        <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
+      </Text>
+    )}
+
+    {req.status === 'Pending' && (
+      <TouchableOpacity
+        style={[styles.submitButton, { backgroundColor: '#D32F2F', marginTop: 10 }]}
+        onPress={() => handleCancel(req.id)}
+      >
+        <Text style={styles.submitButtonText}>Cancel</Text>
+      </TouchableOpacity>
+    )}
+
+    {req.status === 'Completed' && (
+      <TouchableOpacity
+        style={[styles.submitButton, { backgroundColor: '#757575', marginTop: 10 }]}
+        onPress={() => handleDelete(req.id)}
+      >
+        <Text style={styles.submitButtonText}>Delete</Text>
+      </TouchableOpacity>
+    )}
+  </View>
+))}
 
 const styles = StyleSheet.create({
   container: {

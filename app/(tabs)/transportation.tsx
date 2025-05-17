@@ -18,91 +18,108 @@ export default function Transportation() {
   const [pickupTime, setPickupTime] = useState('');
   const [address, setAddress] = useState('');
   const [requests, setRequests] = useState<any[]>([]);
-
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<'medical' | 'personal' | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [displayAppointmentTime, setDisplayAppointmentTime] = useState('');
+  const [displayPickupTime, setDisplayPickupTime] = useState('');
 
-  useFocusEffect(
-    useCallback(() => {
-      const loadData = async () => {
-        try {
-          const { first_name, last_name, room_number } = await fetchProfile(token);
-          const fullProfile = { first_name, last_name, room_number };
-          setProfile(fullProfile);
+const loadRequests = async () => {
+  try {
+    const { first_name, last_name, room_number } = await fetchProfile(token);
+    const fullProfile = { first_name, last_name, room_number };
+    setProfile(fullProfile);
 
-          const res = await apiClient.get('/transportation/');
-          const filtered = res.data.filter(
-            (r: any) =>
-              r.resident_name === `${first_name} ${last_name}` && r.room_number === room_number
-          );
-          setRequests(filtered);
-        } catch (error) {
-          if (error.response?.status === 401) {
-            Alert.alert('Session Expired', 'Please log in again.', [{ text: 'OK', onPress: logout }]);
-          } else {
-            Alert.alert('Error', 'Could not load profile or requests.');
-          }
-        }
-      };
+    const res = await apiClient.get('/transportation/');
+    const filtered = res.data.filter(
+      (r: any) =>
+        r.resident_name === `${first_name} ${last_name}` &&
+        r.room_number === room_number &&
+        r.status !== 'Cancelled' // ⬅️ Exclude cancelled
+    );
+    setRequests(filtered);
+  } catch (error) {
+    if (error.response?.status === 401) {
+      Alert.alert('Session Expired', 'Please log in again.', [{ text: 'OK', onPress: logout }]);
+    } else {
+      Alert.alert('Error', 'Could not load profile or requests.');
+    }
+  }
+};
 
-      loadData();
-      setSelectedRequest(null);
-      setDoctorName('');
-      setAppointmentTime('');
-      setDestinationName('');
-      setPickupTime('');
-      setAddress('');
-      setPickerTarget(null);
-      setSelectedDate(null);
-      setShowTimePicker(false);
-    }, [token])
-  );
-
-  const handleTimeConfirm = (date: Date) => {
-    const formatted = format(date, 'EEEE, MMMM d \'at\' h:mm a');
-    setSelectedDate(date);
-    pickerTarget === 'medical' ? setAppointmentTime(formatted) : setPickupTime(formatted);
-    setShowTimePicker(false);
+useFocusEffect(
+  useCallback(() => {
+    loadRequests();
+    setSelectedRequest(null);
+    setDoctorName('');
+    setAppointmentTime('');
+    setDestinationName('');
+    setPickupTime('');
+    setAddress('');
     setPickerTarget(null);
+    setSelectedDate(null);
+    setShowTimePicker(false);
+    setDisplayAppointmentTime('');
+    setDisplayPickupTime('');
+  }, [token])
+);
+
+const handleTimeConfirm = (date: Date) => {
+  const display = format(date, 'EEEE, MMMM d \'at\' h:mm a');
+  const iso = date.toISOString();
+
+  setSelectedDate(date);
+
+  if (pickerTarget === 'medical') {
+    setAppointmentTime(iso);
+    setDisplayAppointmentTime(display);
+  } else {
+    setPickupTime(iso);
+    setDisplayPickupTime(display);
+  }
+
+  setShowTimePicker(false);
+  setPickerTarget(null);
+};
+
+const handleSubmit = async () => {
+  if (!selectedRequest) {
+    Alert.alert('Selection Required', 'Please choose a transportation type.');
+    return;
+  }
+
+  const baseData = {
+    resident_name: `${profile.first_name} ${profile.last_name}`,
+    room_number: profile.room_number,
+    request_type: selectedRequest,
+    status: 'Pending',
   };
 
-  const handleSubmit = async () => {
-    if (!selectedRequest) {
-      Alert.alert('Selection Required', 'Please choose a transportation type.');
+  let requestData;
+  if (selectedRequest === 'Medical') {
+    if (!doctorName.trim() || !appointmentTime.trim()) {
+      Alert.alert('Missing Info', 'Doctor Name and Appointment Time are required.');
       return;
     }
-
-    const baseData = {
-      resident_name: `${profile.first_name} ${profile.last_name}`,
-      room_number: profile.room_number,
-      request_type: selectedRequest,
-      status: 'Pending',
-    };
-
-    let requestData;
-    if (selectedRequest === 'Medical') {
-      if (!doctorName.trim() || !appointmentTime.trim()) {
-        Alert.alert('Missing Info', 'Doctor Name and Appointment Time are required.');
-        return;
-      }
-      requestData = { ...baseData, doctor_name: doctorName, appointment_time: appointmentTime, address };
-    } else {
-      if (!destinationName.trim() || !pickupTime.trim()) {
-        Alert.alert('Missing Info', 'Destination Name and Pick-up Time are required.');
-        return;
-      }
-      requestData = { ...baseData, destination_name: destinationName, pickup_time: pickupTime, address };
+    requestData = { ...baseData, doctor_name: doctorName, appointment_time: appointmentTime, address };
+  } else {
+    if (!destinationName.trim() || !pickupTime.trim()) {
+      Alert.alert('Missing Info', 'Destination Name and Pick-up Time are required.');
+      return;
     }
+    requestData = { ...baseData, destination_name: destinationName, pickup_time: pickupTime, address };
+  }
 
-    try {
-      await apiClient.post('/transportation/', requestData);
-      await sendImmediateNotification('Transportation Request Submitted', 'Your request is being processed.');
-      Alert.alert('Success', 'Your transportation request has been submitted.');
-    } catch {
-      Alert.alert('Error', 'Something went wrong submitting your request.');
-    }
-  };
+  try {
+    await apiClient.post('/transportation/', requestData);
+    await sendImmediateNotification('Transportation Request Submitted', 'Your request is being processed.');
+    Alert.alert('Success', 'Your transportation request has been submitted.');
+
+    await loadRequests();
+  } catch {
+    Alert.alert('Error', 'Something went wrong submitting your request.');
+  }
+};
 
   const handleCancel = async (id: number) => {
     try {
@@ -165,7 +182,7 @@ export default function Transportation() {
           <TextInput style={styles.textInput} placeholder="Dr. Name" value={doctorName} onChangeText={setDoctorName} />
           <TextInput style={styles.textInput} placeholder="Address (optional)" value={address} onChangeText={setAddress} />
           <TouchableOpacity style={styles.textInput} onPress={() => { setPickerTarget('medical'); setShowTimePicker(true); }}>
-            <Text style={{ fontSize: 18 }}>{appointmentTime || 'Select Appointment Time'}</Text>
+            <Text style={{ fontSize: 18 }}>{displayAppointmentTime || 'Select Appointment Time'}</Text>
           </TouchableOpacity>
         </>
       )}
@@ -175,7 +192,7 @@ export default function Transportation() {
           <TextInput style={styles.textInput} placeholder="Destination Name" value={destinationName} onChangeText={setDestinationName} />
           <TextInput style={styles.textInput} placeholder="Address (optional)" value={address} onChangeText={setAddress} />
           <TouchableOpacity style={styles.textInput} onPress={() => { setPickerTarget('personal'); setShowTimePicker(true); }}>
-            <Text style={{ fontSize: 18 }}>{pickupTime || 'Select Pick-up Time'}</Text>
+            <Text style={{ fontSize: 18 }}>{displayPickupTime || 'Select Pick-up Time'}</Text>
           </TouchableOpacity>
         </>
       )}
@@ -258,6 +275,9 @@ export default function Transportation() {
     )}
   </View>
 ))}
+</ScrollView>
+);
+};
 
 const styles = StyleSheet.create({
   container: {

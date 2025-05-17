@@ -7,6 +7,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { format } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
 import { fetchProfile } from '@utils/fetchProfile';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Transportation() {
   const { token, logout } = useAuth();
@@ -88,6 +89,46 @@ const handleSubmit = async () => {
     return;
   }
 
+  const requestTimeStr = selectedRequest === 'Medical' ? appointmentTime : pickupTime;
+  if (!requestTimeStr) {
+    Alert.alert('Missing Time', 'Please select a time for the request.');
+    return;
+  }
+
+  const requestTime = new Date(requestTimeStr);
+  const requestHour = requestTime.getHours();
+  const requestDateStr = requestTime.toDateString();
+
+  const blockStart = Math.floor(requestHour / 2) * 2;
+  const blockEnd = blockStart + 2;
+
+  const sameBlockRequests = requests.filter((r) => {
+    const timeStr = r.pickup_time || r.appointment_time;
+    if (!timeStr) return false;
+
+    const time = new Date(timeStr);
+    return (
+      time.toDateString() === requestDateStr &&
+      time.getHours() >= blockStart &&
+      time.getHours() < blockEnd &&
+      r.status !== 'Cancelled'
+    );
+  });
+
+  if (sameBlockRequests.length >= 2) {
+    const startTime = new Date();
+    startTime.setHours(blockStart, 0, 0, 0);
+
+    const endTime = new Date();
+    endTime.setHours(blockEnd, 0, 0, 0);
+
+    Alert.alert(
+      'Block Full',
+      `Sorry, the ${format(startTime, 'h:mm a')}–${format(endTime, 'h:mm a')} time block is already full. Please choose a different time.`
+    );
+    return;
+  }
+
   const baseData = {
     resident_name: `${profile.first_name} ${profile.last_name}`,
     room_number: profile.room_number,
@@ -97,25 +138,51 @@ const handleSubmit = async () => {
 
   let requestData;
   if (selectedRequest === 'Medical') {
-    if (!doctorName.trim() || !appointmentTime.trim()) {
-      Alert.alert('Missing Info', 'Doctor Name and Appointment Time are required.');
+    if (!doctorName.trim()) {
+      Alert.alert('Missing Info', 'Doctor Name is required.');
       return;
     }
-    requestData = { ...baseData, doctor_name: doctorName, appointment_time: appointmentTime, address };
+    requestData = {
+      ...baseData,
+      doctor_name: doctorName,
+      appointment_time: appointmentTime,
+      address,
+    };
   } else {
-    if (!destinationName.trim() || !pickupTime.trim()) {
-      Alert.alert('Missing Info', 'Destination Name and Pick-up Time are required.');
+    if (!destinationName.trim()) {
+      Alert.alert('Missing Info', 'Destination Name is required.');
       return;
     }
-    requestData = { ...baseData, destination_name: destinationName, pickup_time: pickupTime, address };
+    requestData = {
+      ...baseData,
+      destination_name: destinationName,
+      pickup_time: pickupTime,
+      address,
+    };
   }
 
   try {
     await apiClient.post('/transportation/', requestData);
-    await sendImmediateNotification('Transportation Request Submitted', 'Your request is being processed.');
+    await sendImmediateNotification(
+      'Transportation Request Submitted',
+      'Your request is being processed.'
+    );
     Alert.alert('Success', 'Your transportation request has been submitted.');
-
     await loadRequests();
+
+    // Reset fields after successful submission
+    setSelectedRequest(null);
+    setDoctorName('');
+    setAppointmentTime('');
+    setDestinationName('');
+    setPickupTime('');
+    setAddress('');
+    setPickerTarget(null);
+    setSelectedDate(null);
+    setShowTimePicker(false);
+    setDisplayAppointmentTime('');
+    setDisplayPickupTime('');
+
   } catch {
     Alert.alert('Error', 'Something went wrong submitting your request.');
   }
@@ -154,8 +221,13 @@ const handleSubmit = async () => {
   }
 };
 
-  return (
-    <ScrollView contentContainerStyle={styles.container}>
+    return (
+      <SafeAreaView style={{ flex: 1 }}>
+        <ScrollView 
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: 80 }}
+          keyboardShouldPersistTaps="handled"
+        >
       <Text style={styles.header}>Transportation</Text>
 
       <View style={styles.infoBox}>
@@ -226,17 +298,31 @@ const handleSubmit = async () => {
       </Text>
     </Text>
 
-    {req.request_type === 'Medical' ? (
-      <>
-        <Text style={styles.infoText}><Text style={styles.label}>Doctor:</Text> {req.doctor_name}</Text>
-        <Text style={styles.infoText}><Text style={styles.label}>Appt:</Text> {req.appointment_time}</Text>
-      </>
-    ) : (
-      <>
-        <Text style={styles.infoText}><Text style={styles.label}>Destination:</Text> {req.destination_name}</Text>
-        <Text style={styles.infoText}><Text style={styles.label}>Pickup:</Text> {req.pickup_time}</Text>
-      </>
-    )}
+{req.request_type === 'Medical' ? (
+  <>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Doctor:</Text> {req.doctor_name}
+    </Text>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Appt:</Text>{' '}
+      {req.appointment_time
+        ? format(new Date(req.appointment_time), 'MMMM d, yyyy h:mm a')
+        : 'N/A'}
+    </Text>
+  </>
+) : (
+  <>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Destination:</Text> {req.destination_name}
+    </Text>
+    <Text style={styles.infoText}>
+      <Text style={styles.label}>Pickup:</Text>{' '}
+      {req.pickup_time
+        ? format(new Date(req.pickup_time), 'MMMM d, yyyy h:mm a')
+        : 'N/A'}
+    </Text>
+  </>
+)}
 
     {req.address && (
       <Text style={styles.infoText}>
@@ -275,7 +361,8 @@ const handleSubmit = async () => {
     )}
   </View>
 ))}
-</ScrollView>
+    </ScrollView>
+  </SafeAreaView>
 );
 };
 

@@ -14,10 +14,18 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('@Auth:token');
-    if (token) {
+
+    // Only attach token to protected routes
+    if (
+      token &&
+      config.url &&
+      !config.url.includes('/login') &&
+      !config.url.includes('/register')
+    ) {
       if (!config.headers) config.headers = {};
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)

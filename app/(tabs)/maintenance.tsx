@@ -196,9 +196,11 @@ return (
     )}
 
     {req.staff_comment && (
-      <Text style={styles.infoText}>
-        <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
-      </Text>
+      <View style={{ marginTop: 8, padding: 10, backgroundColor: '#F1F8E9', borderRadius: 8 }}>
+        <Text style={[styles.infoText, { color: '#33691E' }]}>
+          <Text style={styles.label}>Staff Comment:</Text> {req.staff_comment}
+        </Text>
+      </View>
     )}
 
     {req.status === 'Pending' && (

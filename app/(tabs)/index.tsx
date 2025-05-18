@@ -31,22 +31,20 @@ useFocusEffect(
         setFullName(`${first_name} ${last_name}`);
         setRoomNumber(room_number || '');
 
-        const newAnnouncements = [
-          { id: 1, title: 'Bingo Night 🎉', content: 'Join us this Friday at 6 PM in the Main Hall for Bingo and snacks!' },
-          { id: 2, title: 'Flu Shots Available 💉', content: 'Free flu shots will be given in the Wellness Center Monday through Wednesday.' },
-          { id: 3, title: 'New Book Club 📚', content: 'Join us Tuesday at 3 PM in the library for the new reading club.' },
-        ];
+  const feedResponse = await apiClient.get('/feed/');
+  const newAnnouncements = feedResponse.data;
 
-        const newOnly = newAnnouncements.filter(a => !previousIdsRef.current.has(a.id));
-        for (const a of newOnly) {
-          await Notifications.scheduleNotificationAsync({
-            content: { title: a.title, body: a.content, sound: true },
-            trigger: null,
-          });
-          previousIdsRef.current.add(a.id);
-        }
+  const newOnly = newAnnouncements.filter(a => !previousIdsRef.current.has(a.id));
+  for (const a of newOnly) {
+    await Notifications.scheduleNotificationAsync({
+      content: { title: a.title, body: a.content, sound: true },
+      trigger: null,
+    });
+    previousIdsRef.current.add(a.id);
+  }
 
-        setAnnouncements(newAnnouncements);
+  setAnnouncements(newAnnouncements);
+
       } catch (error: any) {
         if (__DEV__) console.warn('❌ Home screen fetch failed:', error?.message || error);
         // Optionally show a toast or alert only if token still exists
@@ -58,17 +56,33 @@ useFocusEffect(
   }, [token])
 );
 
-  const isStaff = user?.role === 'staff';
+const isStaff = user?.role === 'staff';
 
-const icons = [
+const baseIcons = [
   { name: 'Admin', label: 'Admin', source: require('@assets/images/admin.png'), route: 'admin' },
-  { name: 'Dining', label: isStaff ? 'Manage Dining' : 'Dining', source: require('@assets/images/dining.png'), route: isStaff ? 'manage-dining' : 'dining' },
-  { name: 'Activities', label: isStaff ? 'Manage Activities' : 'Activities', source: require('@assets/images/activities.png'), route: isStaff ? 'manage-activities' : 'activities' },
-  { name: 'Maintenance', label: isStaff ? 'Manage Maintenance' : 'Maintenance & Housekeeping', source: require('@assets/images/maintenance.png'), route: isStaff ? 'manage-maintenance' : 'maintenance' },
-  { name: 'Transportation', label: isStaff ? 'Manage Transportation' : 'Transportation', source: require('@assets/images/transportation.png'), route: isStaff ? 'manage-transportation' : 'transportation' },
-  { name: 'Wellness', label: isStaff ? 'Manage Wellness' : 'Wellness', source: require('@assets/images/wellness.png'), route: isStaff ? 'manage-wellness' : 'wellness' },
-].sort((a, b) => a.label.localeCompare(b.label));
+  { name: 'Dining', label: 'Dining', source: require('@assets/images/dining.png'), route: 'dining' },
+  { name: 'Activities', label: 'Activities', source: require('@assets/images/activities.png'), route: 'activities' },
+  { name: 'Maintenance', label: 'Maintenance & Housekeeping', source: require('@assets/images/maintenance.png'), route: 'maintenance' },
+  { name: 'Transportation', label: 'Transportation', source: require('@assets/images/transportation.png'), route: 'transportation' },
+  { name: 'Wellness', label: 'Wellness', source: require('@assets/images/wellness.png'), route: 'wellness' },
+];
 
+// Remove Wellness if staff
+const filteredIcons = isStaff
+  ? baseIcons.filter(icon => icon.name !== 'Wellness')
+  : baseIcons;
+
+const icons = filteredIcons.map(icon => {
+  if (!isStaff) return icon;
+
+  if (icon.name === 'Admin') return icon;
+
+  return {
+    ...icon,
+    label: icon.name === 'Maintenance' ? 'Manage Maintenance' : `Manage ${icon.label}`,
+    route: icon.route === 'maintenance' ? 'manage-maintenance' : `manage-${icon.route}`,
+  };
+});
 
 return (
   <ScrollView contentContainerStyle={styles.container}>
@@ -98,6 +112,15 @@ return (
       Community Announcements
     </Text>
 
+    {isStaff && (
+      <TouchableOpacity
+        style={{ alignSelf: 'center', marginBottom: 10 }}
+        onPress={() => router.push('/manage-feed')}
+      >
+        <Text style={{ color: 'blue', fontSize: 16 }}>+ Add New</Text>
+      </TouchableOpacity>
+    )}
+
     <View style={{ paddingHorizontal: 10 }}>
       {announcements.map((item) => (
         <View
@@ -108,18 +131,41 @@ return (
             borderRadius: 10,
             marginBottom: 15,
             elevation: 2,
+            position: 'relative',
           }}
         >
           <Text style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 6 }}>
             {item.title}
           </Text>
           <Text style={{ fontSize: 15, color: '#333' }}>{item.content}</Text>
+
+          {isStaff && (
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  await apiClient.delete(`/feed/${item.id}/`);
+                  setAnnouncements(prev => prev.filter(a => a.id !== item.id));
+                } catch (err) {
+                  Alert.alert('Error', 'Failed to delete announcement.');
+                }
+              }}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                padding: 4,
+              }}
+            >
+              <Ionicons name="close-circle" size={24} color="red" />
+            </TouchableOpacity>
+          )}
         </View>
       ))}
     </View>
-  </ScrollView>
-);
-}
+
+      </ScrollView>
+    );
+    }
 
 const styles = StyleSheet.create({
   container: {

@@ -55,8 +55,5 @@ export const isInTimeBlock = (
   const blockEnd = new Date(selectedDate);
   blockEnd.setHours(endHour, 0, 0, 0);
 
-  return isWithinInterval(localDateTime, {
-    start: blockStart,
-    end: blockEnd,
-  });
+  return localDateTime >= blockStart && localDateTime < blockEnd;
 };

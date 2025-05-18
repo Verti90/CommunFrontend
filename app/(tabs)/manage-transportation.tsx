@@ -25,9 +25,20 @@ export default function ManageTransportation() {
   const fetchAllRequests = async () => {
     try {
       const res = await apiClient.get('/transportation/');
-      setRequests(res.data.filter((r: any) => r.status !== 'Cancelled'));
+      const filtered = res.data.filter((r: any) => r.status !== 'Cancelled');
+      setRequests(filtered);
     } catch (error) {
       console.warn('Error fetching transportation requests:', error);
+    }
+  };
+
+  const markCompleted = async (id: number) => {
+    try {
+      await apiClient.patch(`/transportation/${id}/`, { status: 'Completed' });
+      Alert.alert('Success', 'Marked as Completed');
+      fetchAllRequests();
+    } catch {
+      Alert.alert('Error', 'Failed to mark as completed');
     }
   };
 
@@ -36,16 +47,6 @@ export default function ManageTransportation() {
       isInTimeBlock(req.pickup_time || req.appointment_time, selectedDate!, startHour, endHour)
     );
   };
-
-    const markCompleted = async (id: number) => {
-      try {
-        await apiClient.patch(`/transportation/${id}/`, { status: 'Completed' });
-        Alert.alert('Success', 'Marked as Completed');
-        fetchAllRequests();
-      } catch {
-        Alert.alert('Error', 'Failed to mark as completed');
-      }
-    };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -76,13 +77,19 @@ export default function ManageTransportation() {
               <Text style={styles.emptyText}>No requests</Text>
             ) : (
               blockRequests.map((req) => (
-                <View key={req.id} style={styles.reqItem}>
-                  <Text style={styles.reqText}>
-                    👤 {req.resident_name} ({req.request_type})
-                  </Text>
-                  <Text style={styles.reqText}>
-                    🕒 {formatTimeDisplay(req.pickup_time || req.appointment_time)}
-                  </Text>
+                <View
+                  key={req.id}
+                  style={[
+                    styles.reqItem,
+                    req.status === 'Completed' && { backgroundColor: '#E8F5E9', padding: 10, borderRadius: 8 },
+                  ]}
+                >
+                  <Text style={styles.reqText}>👤 {req.resident_name} ({req.request_type})</Text>
+                  <Text style={styles.reqText}>🛏️ Room: {req.room_number}</Text>
+                  <Text style={styles.reqText}>📍 {req.destination_name || req.doctor_name || 'N/A'}</Text>
+                  {req.address && <Text style={styles.reqText}>📬 {req.address}</Text>}
+                  <Text style={styles.reqText}>🕒 {formatTimeDisplay(req.pickup_time || req.appointment_time)}</Text>
+
                   {req.status === 'Pending' && (
                     <TouchableOpacity
                       style={styles.markBtn}
@@ -90,6 +97,12 @@ export default function ManageTransportation() {
                     >
                       <Text style={styles.markBtnText}>Mark Completed</Text>
                     </TouchableOpacity>
+                  )}
+
+                  {req.status === 'Completed' && (
+                    <Text style={[styles.reqText, { color: '#388E3C', fontWeight: 'bold' }]}>
+                      ✅ Completed
+                    </Text>
                   )}
                 </View>
               ))
@@ -147,6 +160,7 @@ const styles = StyleSheet.create({
   reqText: {
     fontSize: 16,
     color: '#444',
+    marginBottom: 2,
   },
   markBtn: {
     marginTop: 6,

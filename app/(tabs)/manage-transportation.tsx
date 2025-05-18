@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import apiClient from '@services/api';
-import { format, isWithinInterval, parseISO } from 'date-fns';
+import { formatTimeDisplay, isInTimeBlock } from '@utils/time';
+import { format } from 'date-fns';
 
 const TIME_BLOCKS = [
   { label: '8:00–10:00 AM', start: 8, end: 10 },
@@ -31,37 +32,20 @@ export default function ManageTransportation() {
   };
 
   const getBlockRequests = (startHour: number, endHour: number) => {
-    return requests.filter((req) => {
-      const timeStr = req.pickup_time || req.appointment_time;
-      if (!timeStr || !selectedDate) return false;
-
-      const dateTime = parseISO(timeStr);
-
-      const localDateTime = new Date(dateTime.getTime() + dateTime.getTimezoneOffset() * 60000);
-      if (format(localDateTime, 'yyyy-MM-dd') !== format(selectedDate, 'yyyy-MM-dd')) return false;
-
-      const blockStart = new Date(selectedDate);
-      blockStart.setHours(startHour - blockStart.getTimezoneOffset() / 60, 0, 0, 0);
-
-      const blockEnd = new Date(selectedDate);
-      blockEnd.setHours(endHour - blockEnd.getTimezoneOffset() / 60, 0, 0, 0);
-
-      return isWithinInterval(localDateTime, {
-        start: blockStart,
-        end: blockEnd,
-      });
-    });
+    return requests.filter((req) =>
+      isInTimeBlock(req.pickup_time || req.appointment_time, selectedDate!, startHour, endHour)
+    );
   };
 
-  const markCompleted = async (id: number) => {
-    try {
-      await apiClient.patch(`/transportation/${id}/`, { status: 'Completed' });
-      Alert.alert('Success', 'Marked as Completed');
-      fetchAllRequests();
-    } catch {
-      Alert.alert('Error', 'Failed to mark as completed');
-    }
-  };
+    const markCompleted = async (id: number) => {
+      try {
+        await apiClient.patch(`/transportation/${id}/`, { status: 'Completed' });
+        Alert.alert('Success', 'Marked as Completed');
+        fetchAllRequests();
+      } catch {
+        Alert.alert('Error', 'Failed to mark as completed');
+      }
+    };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -97,7 +81,7 @@ export default function ManageTransportation() {
                     👤 {req.resident_name} ({req.request_type})
                   </Text>
                   <Text style={styles.reqText}>
-                    🕒 {format(parseISO(req.pickup_time || req.appointment_time), 'h:mm a')}
+                    🕒 {formatTimeDisplay(req.pickup_time || req.appointment_time)}
                   </Text>
                   {req.status === 'Pending' && (
                     <TouchableOpacity

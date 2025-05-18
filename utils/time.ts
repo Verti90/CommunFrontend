@@ -1,5 +1,6 @@
 import { addDays, startOfWeek, endOfWeek } from 'date-fns';
 import moment from 'moment-timezone';
+import { format, isWithinInterval } from 'date-fns';
 
 const CENTRAL_TZ = 'America/Chicago';
 
@@ -32,3 +33,30 @@ export const getWeekRange = (date: Date): { start: Date; end: Date } => {
  */
 export const getDateForWeekdayIndex = (reference: Date, index: number): Date =>
   addDays(getWeekRange(reference).start, index);
+
+export const formatTimeDisplay = (isoString: string): string => {
+  const date = new Date(isoString);
+  return format(date, 'MMMM d, yyyy h:mm a');
+};
+
+export const isInTimeBlock = (
+  isoString: string,
+  selectedDate: Date,
+  startHour: number,
+  endHour: number
+): boolean => {
+  const localDateTime = new Date(isoString);
+
+  if (format(localDateTime, 'yyyy-MM-dd') !== format(selectedDate, 'yyyy-MM-dd')) return false;
+
+  const blockStart = new Date(selectedDate);
+  blockStart.setHours(startHour, 0, 0, 0);
+
+  const blockEnd = new Date(selectedDate);
+  blockEnd.setHours(endHour, 0, 0, 0);
+
+  return isWithinInterval(localDateTime, {
+    start: blockStart,
+    end: blockEnd,
+  });
+};

@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { formatTimeDisplay, isInTimeBlock } from '@utils/time';
 import { format } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
 import { fetchProfile } from '@utils/fetchProfile';
@@ -51,22 +52,30 @@ const loadRequests = async () => {
 useFocusEffect(
   useCallback(() => {
     loadRequests();
-    setSelectedRequest(null);
-    setDoctorName('');
-    setAppointmentTime('');
-    setDestinationName('');
-    setPickupTime('');
-    setAddress('');
-    setPickerTarget(null);
-    setSelectedDate(null);
-    setShowTimePicker(false);
-    setDisplayAppointmentTime('');
-    setDisplayPickupTime('');
   }, [token])
 );
 
+const resetForm = () => {
+  setSelectedRequest(null);
+  setDoctorName('');
+  setAppointmentTime('');
+  setDestinationName('');
+  setPickupTime('');
+  setAddress('');
+  setPickerTarget(null);
+  setSelectedDate(null);
+  setShowTimePicker(false);
+  setDisplayAppointmentTime('');
+  setDisplayPickupTime('');
+};
+
 const handleTimeConfirm = (date: Date) => {
-  const display = format(date, 'EEEE, MMMM d \'at\' h:mm a');
+  if (!pickerTarget) {
+    setShowTimePicker(false);
+    return;
+  }
+
+  const display = format(date, "EEEE, MMMM d 'at' h:mm a");
   const iso = date.toISOString();
 
   setSelectedDate(date);
@@ -96,30 +105,19 @@ const handleSubmit = async () => {
   }
 
   const requestTime = new Date(requestTimeStr);
-  const requestHour = requestTime.getHours();
-  const requestDateStr = requestTime.toDateString();
-
-  const blockStart = Math.floor(requestHour / 2) * 2;
+  const blockStart = Math.floor(requestTime.getHours() / 2) * 2;
   const blockEnd = blockStart + 2;
 
   const sameBlockRequests = requests.filter((r) => {
     const timeStr = r.pickup_time || r.appointment_time;
-    if (!timeStr) return false;
-
-    const time = new Date(timeStr);
-    return (
-      time.toDateString() === requestDateStr &&
-      time.getHours() >= blockStart &&
-      time.getHours() < blockEnd &&
-      r.status !== 'Cancelled'
-    );
+    return timeStr && isInTimeBlock(timeStr, requestTime, blockStart, blockEnd) && r.status !== 'Cancelled';
   });
 
   if (sameBlockRequests.length >= 2) {
-    const startTime = new Date();
+    const startTime = new Date(requestTime);
     startTime.setHours(blockStart, 0, 0, 0);
 
-    const endTime = new Date();
+    const endTime = new Date(requestTime);
     endTime.setHours(blockEnd, 0, 0, 0);
 
     Alert.alert(
@@ -169,24 +167,12 @@ const handleSubmit = async () => {
     );
     Alert.alert('Success', 'Your transportation request has been submitted.');
     await loadRequests();
+    resetForm();
 
-    // Reset fields after successful submission
-    setSelectedRequest(null);
-    setDoctorName('');
-    setAppointmentTime('');
-    setDestinationName('');
-    setPickupTime('');
-    setAddress('');
-    setPickerTarget(null);
-    setSelectedDate(null);
-    setShowTimePicker(false);
-    setDisplayAppointmentTime('');
-    setDisplayPickupTime('');
-
-  } catch {
-    Alert.alert('Error', 'Something went wrong submitting your request.');
-  }
-};
+      } catch {
+        Alert.alert('Error', 'Something went wrong submitting your request.');
+      }
+    };
 
   const handleCancel = async (id: number) => {
     try {
@@ -306,7 +292,7 @@ const handleSubmit = async () => {
     <Text style={styles.infoText}>
       <Text style={styles.label}>Appt:</Text>{' '}
       {req.appointment_time
-        ? format(new Date(req.appointment_time), 'MMMM d, yyyy h:mm a')
+        ? formatTimeDisplay(req.appointment_time)
         : 'N/A'}
     </Text>
   </>
@@ -318,7 +304,7 @@ const handleSubmit = async () => {
     <Text style={styles.infoText}>
       <Text style={styles.label}>Pickup:</Text>{' '}
       {req.pickup_time
-        ? format(new Date(req.pickup_time), 'MMMM d, yyyy h:mm a')
+        ? formatTimeDisplay(req.pickup_time)
         : 'N/A'}
     </Text>
   </>

@@ -1,60 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  Alert,
+  View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, Alert
 } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import { format } from 'date-fns';
 
 interface MedicineEntry {
   id: string;
   name: string;
   dosage: string;
-  times: string[];
-  notificationIds: string[];
+  datetime: Date;
+  frequency: string;
+  notificationId: string;
 }
 
 export default function Wellness() {
   const [medicineName, setMedicineName] = useState('');
   const [dosage, setDosage] = useState('');
-  const [selectedTime, setSelectedTime] = useState('');
-  const [rawTime, setRawTime] = useState<Date | null>(null);
-  const [timePickerVisible, setTimePickerVisible] = useState(false);
-  const [pendingTimes, setPendingTimes] = useState<string[]>([]);
+  const [dateTime, setDateTime] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [frequency, setFrequency] = useState('Once');
   const [schedule, setSchedule] = useState<MedicineEntry[]>([]);
 
   useEffect(() => {
-    Notifications.requestPermissionsAsync();
-  }, []);
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      priority: Notifications.AndroidNotificationPriority.HIGH, // for Android
+    }),
+  });
+
+  // Request permissions for notifications
+  Notifications.requestPermissionsAsync();
+}, []);
 
   useFocusEffect(
-    React.useCallback(() => {
-      setMedicineName('');
-      setDosage('');
-      setSelectedTime('');
-      setRawTime(null);
-      setPendingTimes([]);
-      setTimePickerVisible(false);
-    }, [])
-  );
+  React.useCallback(() => {
+    setMedicineName('');
+    setDosage('');
+    setDateTime(null);
+    setFrequency('Once');
+  }, [])
+);
 
-  const scheduleDailyReminder = async (
+  const scheduleReminder = async (
     name: string,
     dosage: string,
-    timeStr: string
+    date: Date,
+    frequency: string
   ): Promise<string> => {
-    const [hourStr, minuteStr] = timeStr.replace(/AM|PM/i, '').trim().split(':');
-    let hour = parseInt(hourStr);
-    const minute = parseInt(minuteStr);
+    let trigger: any;
 
-    if (/PM/i.test(timeStr) && hour !== 12) hour += 12;
-    if (/AM/i.test(timeStr) && hour === 12) hour = 0;
+    if (frequency === 'Once') {
+      trigger = date;
+    } else if (frequency === 'Daily') {
+      trigger = {
+        hour: date.getHours(),
+        minute: date.getMinutes(),
+        repeats: true,
+      };
+    } else if (frequency === 'Weekly') {
+      trigger = {
+        weekday: date.getDay() === 0 ? 7 : date.getDay(), // Sunday = 7 for iOS
+        hour: date.getHours(),
+        minute: date.getMinutes(),
+        repeats: true,
+      };
+    } else if (frequency === 'Monthly') {
+      trigger = {
+        day: date.getDate(),
+        hour: date.getHours(),
+        minute: date.getMinutes(),
+        repeats: true,
+      };
+    }
 
     const id = await Notifications.scheduleNotificationAsync({
       content: {
@@ -62,53 +86,38 @@ export default function Wellness() {
         body: `Dosage: ${dosage}`,
         sound: true,
       },
-      trigger: {
-        hour,
-        minute,
-        repeats: true,
-      },
+      trigger,
     });
 
     return id;
   };
 
-  const handleAddTime = () => {
-    if (!selectedTime) return;
-    if (pendingTimes.includes(selectedTime)) return;
-
-    setPendingTimes([...pendingTimes, selectedTime]);
-    setSelectedTime('');
-    setRawTime(null);
-  };
-
   const handleAddMedicine = async () => {
-    if (!medicineName.trim() || !dosage.trim() || pendingTimes.length === 0) {
-      Alert.alert('Missing Info', 'Fill all fields and add at least one time.');
+    if (!medicineName.trim() || !dosage.trim() || !dateTime) {
+      Alert.alert('Missing Info', 'Please complete all fields.');
       return;
     }
 
-    const notificationIds = await Promise.all(
-      pendingTimes.map((t) => scheduleDailyReminder(medicineName, dosage, t))
-    );
+    const notificationId = await scheduleReminder(medicineName, dosage, dateTime, frequency);
 
     const newEntry: MedicineEntry = {
       id: Date.now().toString(),
       name: medicineName,
       dosage,
-      times: pendingTimes,
-      notificationIds,
+      datetime: dateTime,
+      frequency,
+      notificationId,
     };
 
     setSchedule([...schedule, newEntry]);
     setMedicineName('');
     setDosage('');
-    setPendingTimes([]);
+    setDateTime(null);
+    setFrequency('Once');
   };
 
   const handleDelete = async (entry: MedicineEntry) => {
-    for (const id of entry.notificationIds) {
-      await Notifications.cancelScheduledNotificationAsync(id);
-    }
+    await Notifications.cancelScheduledNotificationAsync(entry.notificationId);
     setSchedule(schedule.filter((e) => e.id !== entry.id));
   };
 
@@ -130,48 +139,36 @@ export default function Wellness() {
       />
 
       <TouchableOpacity
-        style={[styles.input, { justifyContent: 'center' }]}
-        onPress={() => setTimePickerVisible(true)}
+        style={styles.input}
+        onPress={() => setShowDatePicker(true)}
       >
-        <Text style={{ fontSize: 18, color: selectedTime ? '#000' : '#aaa' }}>
-          {selectedTime || 'Select Time'}
+        <Text style={{ fontSize: 18, color: dateTime ? '#000' : '#aaa' }}>
+          {dateTime ? format(dateTime, 'PPpp') : 'Select Start Date & Time'}
         </Text>
       </TouchableOpacity>
 
-      {timePickerVisible && (
-        <DateTimePicker
-          value={rawTime || new Date()}
-          mode="time"
-          is24Hour={false}
-          display="default"
-          onChange={(event, selectedDate) => {
-            setTimePickerVisible(false);
-            if (selectedDate) {
-              setRawTime(selectedDate);
-              const hours = selectedDate.getHours();
-              const minutes = selectedDate.getMinutes();
-              const formatted =
-                (hours % 12 || 12) +
-                ':' +
-                minutes.toString().padStart(2, '0') +
-                (hours >= 12 ? ' PM' : ' AM');
-              setSelectedTime(formatted);
-            }
-          }}
-        />
-      )}
+      <DateTimePickerModal
+        isVisible={showDatePicker}
+        mode="datetime"
+        date={dateTime || new Date()}
+        onConfirm={(date) => {
+          setDateTime(date);
+          setShowDatePicker(false);
+        }}
+        onCancel={() => setShowDatePicker(false)}
+      />
 
-      {selectedTime && (
-        <TouchableOpacity style={styles.addButton} onPress={handleAddTime}>
-          <Text style={styles.addButtonText}>Add Time</Text>
-        </TouchableOpacity>
-      )}
-
-      {pendingTimes.length > 0 && (
-        <Text style={styles.pendingTimes}>
-          Times: {pendingTimes.join(', ')}
-        </Text>
-      )}
+      <Text style={styles.label}>Frequency</Text>
+      <Picker
+        selectedValue={frequency}
+        onValueChange={(itemValue) => setFrequency(itemValue)}
+        style={styles.picker}
+      >
+        <Picker.Item label="Once" value="Once" />
+        <Picker.Item label="Daily" value="Daily" />
+        <Picker.Item label="Weekly" value="Weekly" />
+        <Picker.Item label="Monthly" value="Monthly" />
+      </Picker>
 
       <TouchableOpacity style={styles.addButton} onPress={handleAddMedicine}>
         <Text style={styles.addButtonText}>Add to Schedule</Text>
@@ -187,7 +184,7 @@ export default function Wellness() {
                 <Text style={styles.bold}>{item.name}</Text> — {item.dosage}
               </Text>
               <Text style={styles.entryText}>
-                Times: {item.times.join(', ')}
+                {format(item.datetime, 'PPpp')} ({item.frequency})
               </Text>
             </View>
             <TouchableOpacity onPress={() => handleDelete(item)}>
@@ -207,11 +204,17 @@ export default function Wellness() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F3F3E7', padding: 24 },
   header: { fontSize: 34, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  label: { fontSize: 18, marginBottom: 6, fontWeight: '600' },
   input: {
     backgroundColor: '#ffffff',
     borderRadius: 10,
     padding: 16,
     fontSize: 18,
+    marginBottom: 12,
+  },
+  picker: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
     marginBottom: 12,
   },
   addButton: {
@@ -222,12 +225,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   addButtonText: { color: '#ffffff', fontSize: 18, fontWeight: 'bold' },
-  pendingTimes: {
-    fontSize: 16,
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#333',
-  },
   entry: {
     flexDirection: 'row',
     justifyContent: 'space-between',

@@ -52,6 +52,10 @@ export default function ManageFeed() {
       <TouchableOpacity style={styles.button} onPress={handleSubmit}>
         <Text style={styles.buttonText}>Post Announcement</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity style={[styles.button, { backgroundColor: '#999', marginTop: 10 }]} onPress={() => router.back()}>
+        <Text style={styles.buttonText}>Cancel</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }

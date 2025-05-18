@@ -48,7 +48,7 @@ export default function TabLayout() {
         <Tabs.Screen name="manage-activities" options={{ href: null }} />
         <Tabs.Screen name="manage-maintenance" options={{ href: null }} />
         <Tabs.Screen name="manage-transportation" options={{ href: null }} />
-        <Tabs.Screen name="manage-wellness" options={{ href: null }} />
+        <Tabs.Screen name="manage-reports" options={{ href: null }} />
         <Tabs.Screen name="dining" options={{ href: null }} />
         <Tabs.Screen name="activities" options={{ href: null }} />
         <Tabs.Screen name="maintenance" options={{ href: null }} />

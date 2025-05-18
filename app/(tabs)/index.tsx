@@ -64,23 +64,41 @@ const baseIcons = [
   { name: 'Activities', label: 'Activities', source: require('@assets/images/activities.png'), route: 'activities' },
   { name: 'Maintenance', label: 'Maintenance & Housekeeping', source: require('@assets/images/maintenance.png'), route: 'maintenance' },
   { name: 'Transportation', label: 'Transportation', source: require('@assets/images/transportation.png'), route: 'transportation' },
-  { name: 'Wellness', label: 'Wellness', source: require('@assets/images/wellness.png'), route: 'wellness' },
 ];
 
-// Remove Wellness if staff
-const filteredIcons = isStaff
-  ? baseIcons.filter(icon => icon.name !== 'Wellness')
-  : baseIcons;
+const extraIcon = isStaff
+  ? {
+      name: 'Reports',
+      label: 'Reports',
+      source: require('@assets/images/admin.png'),
+      route: 'manage-reports',
+    }
+  : {
+      name: 'Wellness',
+      label: 'Wellness',
+      source: require('@assets/images/wellness.png'),
+      route: 'wellness',
+    };
+
+const filteredIcons = [...baseIcons, extraIcon];
 
 const icons = filteredIcons.map(icon => {
   if (!isStaff) return icon;
 
-  if (icon.name === 'Admin') return icon;
+  if (icon.name === 'Admin' || icon.name === 'Reports') return icon;
+
+  if (icon.name === 'Maintenance') {
+    return {
+      ...icon,
+      label: 'Manage Maintenance',
+      route: 'manage-maintenance',
+    };
+  }
 
   return {
     ...icon,
-    label: icon.name === 'Maintenance' ? 'Manage Maintenance' : `Manage ${icon.label}`,
-    route: icon.route === 'maintenance' ? 'manage-maintenance' : `manage-${icon.route}`,
+    label: `Manage ${icon.label}`,
+    route: `manage-${icon.route}`,
   };
 });
 

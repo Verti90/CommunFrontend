@@ -11,6 +11,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
+import { formatDateLocal } from '@utils/time';
 
 export default function MealSelectionScreen() {
   const [mainItem, setMainItem] = useState('');
@@ -29,8 +30,9 @@ export default function MealSelectionScreen() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const params = useLocalSearchParams();
+  const passedDate =
+    typeof params.date === 'string' ? params.date : formatDateLocal(new Date());
   const { token } = useAuth();
-
   const validMealTimes = ['Breakfast', 'Lunch', 'Dinner'];
   const passedMealTime =
     typeof params.mealTime === 'string' && validMealTimes.includes(params.mealTime)
@@ -78,6 +80,7 @@ export default function MealSelectionScreen() {
       await apiClient.post(
         '/meals/',
         {
+          date: passedDate,
           meal_time: mealTime,
           main_item: `${mainItem}${dessertItem ? `, Dessert: ${dessertItem}` : ''}`,
           protein: sideItem,

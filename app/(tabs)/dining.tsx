@@ -92,7 +92,7 @@ return (
       const selection = upcomingSelections.find(
         (sel) =>
           sel.meal_time.toLowerCase() === meal.meal_type.toLowerCase() &&
-          new Date(sel.created_at).toDateString() === date.toDateString()
+          sel.date === formatDateLocal(date)
       );
 
       return (
@@ -131,6 +131,7 @@ return (
                         params: {
                           mealTime: meal.meal_type,
                           items: JSON.stringify(meal.items),
+                          date: formatDateLocal(date),
                         },
                       })
                     }

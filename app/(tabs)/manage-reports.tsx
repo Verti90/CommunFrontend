@@ -18,8 +18,29 @@ export default function ManageReports() {
   const [activities, setActivities] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
-  const [roomServiceOnly, setRoomServiceOnly] = useState(false);
-  const [hasAllergiesOnly, setHasAllergiesOnly] = useState(false);
+  const [roomServiceFilter, setRoomServiceFilter] = useState<'All' | 'Yes' | 'No'>('All');
+  const [allergiesFilter, setAllergiesFilter] = useState<'All' | 'Yes' | 'No'>('All');
+  const [mealTypeFilter, setMealTypeFilter] = useState<'All' | 'Breakfast' | 'Lunch' | 'Dinner'>('All');
+
+  const cycleRoomServiceFilter = () => {
+    setRoomServiceFilter((prev) =>
+      prev === 'All' ? 'Yes' : prev === 'Yes' ? 'No' : 'All'
+    );
+  };
+  const cycleAllergiesFilter = () => {
+    setAllergiesFilter((prev) =>
+      prev === 'All' ? 'Yes' : prev === 'Yes' ? 'No' : 'All'
+    );
+  };
+
+  const cycleMealTypeFilter = () => {
+  setMealTypeFilter((prev) =>
+    prev === 'All' ? 'Breakfast'
+    : prev === 'Breakfast' ? 'Lunch'
+    : prev === 'Lunch' ? 'Dinner'
+    : 'All'
+  );
+};
 
   const fetchDiningData = async () => {
     try {
@@ -57,20 +78,38 @@ export default function ManageReports() {
     if (groupedMeals[item.meal_time]) groupedMeals[item.meal_time].push(item);
   });
 
-  const applyFilters = (meals) => {
-    return meals
-      .filter((item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.room_number.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .filter((item) => (roomServiceOnly ? item.room_service : true))
-      .filter((item) => (hasAllergiesOnly ? item.allergies?.length > 0 : true))
-      .sort((a, b) => {
-        const nameA = `${a.room_number}-${a.name}`.toLowerCase();
-        const nameB = `${b.room_number}-${b.name}`.toLowerCase();
-        return sortAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-      });
-  };
+const applyFilters = (meals) => {
+  return meals
+    // Meal Type filter
+    .filter((item) => {
+      if (mealTypeFilter === 'All') return true;
+      return item.meal_time === mealTypeFilter;
+    })
+    // Search filter
+    .filter((item) =>
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.room_number.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    // Room Service filter
+    .filter((item) => {
+      if (roomServiceFilter === 'All') return true;
+      if (roomServiceFilter === 'Yes') return !!item.room_service;
+      if (roomServiceFilter === 'No') return !item.room_service;
+      return true;
+    })
+    // Allergies filter
+    .filter((item) => {
+      if (allergiesFilter === 'All') return true;
+      if (allergiesFilter === 'Yes') return Array.isArray(item.allergies) && item.allergies.length > 0;
+      if (allergiesFilter === 'No') return !item.allergies || item.allergies.length === 0;
+      return true;
+    })
+    .sort((a, b) => {
+      const nameA = `${a.room_number}-${a.name}`.toLowerCase();
+      const nameB = `${b.room_number}-${b.name}`.toLowerCase();
+      return sortAsc ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+    });
+};
 
 const handleExportCSV = async () => {
   try {
@@ -136,14 +175,17 @@ const handleExportCSV = async () => {
             style={styles.searchInput}
           />
           <View style={styles.filterRow}>
+            <TouchableOpacity onPress={cycleMealTypeFilter} style={styles.filterButton}>
+              <Text style={styles.filterText}>Meal Type: {mealTypeFilter}</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => setSortAsc(!sortAsc)} style={styles.filterButton}>
               <Text style={styles.filterText}>{sortAsc ? 'Sort: A–Z' : 'Sort: Z–A'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setRoomServiceOnly(!roomServiceOnly)} style={styles.filterButton}>
-              <Text style={styles.filterText}>Room Service: {roomServiceOnly ? 'On' : 'Off'}</Text>
+            <TouchableOpacity onPress={cycleRoomServiceFilter} style={styles.filterButton}>
+              <Text style={styles.filterText}>Room Service: {roomServiceFilter}</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setHasAllergiesOnly(!hasAllergiesOnly)} style={styles.filterButton}>
-              <Text style={styles.filterText}>Allergies: {hasAllergiesOnly ? 'On' : 'Off'}</Text>
+            <TouchableOpacity onPress={cycleAllergiesFilter} style={styles.filterButton}>
+              <Text style={styles.filterText}>Allergies: {allergiesFilter}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleExportCSV} style={styles.exportButton}>
               <Text style={styles.exportText}>Export CSV</Text>

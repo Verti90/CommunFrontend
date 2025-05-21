@@ -42,6 +42,13 @@ export default function ManageReports() {
   );
 };
 
+  const resetFilters = () => {
+    setSortAsc(true);
+    setRoomServiceFilter('All');
+    setAllergiesFilter('All');
+    setMealTypeFilter('All');
+  };
+
   const fetchDiningData = async () => {
     try {
       const response = await apiClient.get('/meals/report/', {
@@ -175,17 +182,20 @@ const handleExportCSV = async () => {
             style={styles.searchInput}
           />
           <View style={styles.filterRow}>
-            <TouchableOpacity onPress={cycleMealTypeFilter} style={styles.filterButton}>
-              <Text style={styles.filterText}>Meal Type: {mealTypeFilter}</Text>
-            </TouchableOpacity>
             <TouchableOpacity onPress={() => setSortAsc(!sortAsc)} style={styles.filterButton}>
               <Text style={styles.filterText}>{sortAsc ? 'Sort: A–Z' : 'Sort: Z–A'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={cycleMealTypeFilter} style={styles.filterButton}>
+              <Text style={styles.filterText}>Meal Type: {mealTypeFilter}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={cycleRoomServiceFilter} style={styles.filterButton}>
               <Text style={styles.filterText}>Room Service: {roomServiceFilter}</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={cycleAllergiesFilter} style={styles.filterButton}>
               <Text style={styles.filterText}>Allergies: {allergiesFilter}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={resetFilters} style={[styles.filterButton, { backgroundColor: '#faad14' }]}>
+              <Text style={[styles.filterText, { fontWeight: 'bold' }]}>Reset Filters</Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleExportCSV} style={styles.exportButton}>
               <Text style={styles.exportText}>Export CSV</Text>
@@ -196,13 +206,36 @@ const handleExportCSV = async () => {
 
       <ScrollView style={styles.scroll}>
         {activeTab === 'dining' ? (
-          Object.entries(groupedMeals).map(([mealType, meals]) => (
-            <View key={mealType}>
-              <Text style={styles.subHeader}>{mealType}</Text>
-              {applyFilters(meals).length === 0 ? (
+          mealTypeFilter === 'All' ? (
+            // Show all meals grouped
+            Object.entries(groupedMeals).map(([mealType, meals]) => (
+              <View key={mealType}>
+                <Text style={styles.subHeader}>{mealType}</Text>
+                {applyFilters(meals).length === 0 ? (
+                  <Text style={styles.emptyText}>No selections</Text>
+                ) : (
+                  applyFilters(meals).map((item, index) => (
+                    <View key={index} style={styles.card}>
+                      <Text style={styles.label}>Room {item.room_number} - {item.name}</Text>
+                      <Text>Main: {item.main_item}</Text>
+                      <Text>Side: {item.protein}</Text>
+                      <Text>Drink: {item.drinks?.join(', ') || 'None'}</Text>
+                      <Text>Room Service: {item.room_service ? 'Yes' : 'No'}</Text>
+                      <Text>Guest: {item.guest_name ? `${item.guest_name} (${item.guest_meal})` : 'No'}</Text>
+                      <Text>Allergies: {item.allergies?.join(', ') || 'None'}</Text>
+                    </View>
+                  ))
+                )}
+              </View>
+            ))
+          ) : (
+            // Show only the selected mealType section
+            <View>
+              <Text style={styles.subHeader}>{mealTypeFilter}</Text>
+              {applyFilters(groupedMeals[mealTypeFilter]).length === 0 ? (
                 <Text style={styles.emptyText}>No selections</Text>
               ) : (
-                applyFilters(meals).map((item, index) => (
+                applyFilters(groupedMeals[mealTypeFilter]).map((item, index) => (
                   <View key={index} style={styles.card}>
                     <Text style={styles.label}>Room {item.room_number} - {item.name}</Text>
                     <Text>Main: {item.main_item}</Text>
@@ -215,7 +248,7 @@ const handleExportCSV = async () => {
                 ))
               )}
             </View>
-          ))
+          )
         ) : (
           activities.map((activity, index) => (
             <View key={index} style={styles.card}>

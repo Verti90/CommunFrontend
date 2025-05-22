@@ -31,7 +31,7 @@ export default function MealSelectionScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const passedDate =
-    typeof params.date === 'string' ? params.date : formatDateLocal(new Date());
+    typeof params.date === 'string' ? params.date : new Date().toISOString().split('T')[0];
   const { token } = useAuth();
   const validMealTimes = ['Breakfast', 'Lunch', 'Dinner'];
   const passedMealTime =

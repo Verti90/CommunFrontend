@@ -8,6 +8,7 @@ import { formatDateLocal } from '@utils/time';
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
 import { format, parseISO } from 'date-fns';
+import isBefore from 'date-fns/isBefore';
 
 export default function ManageReports() {
   const { token } = useAuth();
@@ -18,9 +19,16 @@ export default function ManageReports() {
   const [activities, setActivities] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
+
+  // Dining Filters
   const [roomServiceFilter, setRoomServiceFilter] = useState<'All' | 'Yes' | 'No'>('All');
   const [allergiesFilter, setAllergiesFilter] = useState<'All' | 'Yes' | 'No'>('All');
   const [mealTypeFilter, setMealTypeFilter] = useState<'All' | 'Breakfast' | 'Lunch' | 'Dinner'>('All');
+
+  // Activities Features
+  const [activitySortAsc, setActivitySortAsc] = useState(true); // Earliest to latest by default
+  const [showUpcomingOnly, setShowUpcomingOnly] = useState(false); // Hide past events by default
+  const [checkedIn, setCheckedIn] = useState({}); // { [activityId]: { [participantId]: true/false } }
 
   const cycleRoomServiceFilter = () => {
     setRoomServiceFilter((prev) =>
@@ -48,6 +56,33 @@ export default function ManageReports() {
     setAllergiesFilter('All');
     setMealTypeFilter('All');
   };
+
+  const getFilteredSortedActivities = () => {
+  let filtered = activities;
+  const now = new Date();
+
+  // Show only upcoming events if toggled
+  if (showUpcomingOnly) {
+    filtered = filtered.filter(a => isBefore(now, parseISO(a.date_time)));
+  }
+
+  // Search by name/location (optional, implement as you like)
+  if (searchQuery.trim()) {
+    filtered = filtered.filter(a =>
+      a.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (a.location || '').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
+
+  // Sort by time
+  filtered = filtered.sort((a, b) => {
+    const aTime = parseISO(a.date_time).getTime();
+    const bTime = parseISO(b.date_time).getTime();
+    return activitySortAsc ? aTime - bTime : bTime - aTime;
+  });
+
+  return filtered;
+};
 
   const fetchDiningData = async () => {
     try {
@@ -120,14 +155,37 @@ const applyFilters = (meals) => {
 
 const handleExportCSV = async () => {
   try {
-    let csv = 'Meal Type,Room,Name,Main,Side,Drink,Room Service,Guest Name,Guest Meal,Allergies\\n';
+    let csv = 'Meal Type,Room,Name,Main,Side,Drink,Room Service,Guest Name,Guest Meal,Allergies\n';
     Object.entries(groupedMeals).forEach(([type, meals]) => {
       applyFilters(meals).forEach((item) => {
-        csv += `${type},${item.room_number},${item.name},"${item.main_item}","${item.protein}","${item.drinks?.join(';')}",${item.room_service ? 'Yes' : 'No'},${item.guest_name || ''},"${item.guest_meal || ''}","${item.allergies?.join(';') || ''}"\\n`;
+        csv += `${type},${item.room_number},${item.name},"${item.main_item}","${item.protein}","${item.drinks?.join(';')}",${item.room_service ? 'Yes' : 'No'},${item.guest_name || ''},"${item.guest_meal || ''}","${item.allergies?.join(';') || ''}"\n`;
       });
     });
 
     const fileUri = FileSystem.documentDirectory + 'dining_report.csv';
+    await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
+
+    Alert.alert(
+      'Export Complete',
+      `File saved to:\n${fileUri.replace('file://', '')}\n\nUse Android file browser or ADB to retrieve.`
+    );
+  } catch (error) {
+    console.error('CSV Export Error:', error);
+    Alert.alert('Export Failed', 'An error occurred while saving the file.');
+  }
+};
+
+const handleExportActivitiesCSV = async () => {
+  try {
+    let csv = 'Activity,Date/Time,Location,Participant,Room,Checked In\n';
+    getFilteredSortedActivities().forEach((activity) => {
+      (activity.participants || []).forEach((p) => {
+        const checked = checkedIn[activity.id]?.[p.id] ? 'Yes' : 'No';
+        csv += `"${activity.name}","${format(parseISO(activity.date_time), 'yyyy-MM-dd HH:mm')}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
+      });
+    });
+
+    const fileUri = FileSystem.documentDirectory + 'activities_report.csv';
     await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
 
     Alert.alert(
@@ -204,6 +262,20 @@ const handleExportCSV = async () => {
         </>
       )}
 
+      {activeTab === 'activities' && (
+        <View style={styles.filterRow}>
+          <TouchableOpacity onPress={() => setActivitySortAsc(!activitySortAsc)} style={styles.filterButton}>
+            <Text style={styles.filterText}>{activitySortAsc ? 'Sort: Earliest' : 'Sort: Latest'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowUpcomingOnly(!showUpcomingOnly)} style={styles.filterButton}>
+            <Text style={styles.filterText}>{showUpcomingOnly ? 'Show: Upcoming' : 'Show: All'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleExportActivitiesCSV} style={styles.exportButton}>
+            <Text style={styles.exportText}>Export CSV</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ScrollView style={styles.scroll}>
         {activeTab === 'dining' ? (
           mealTypeFilter === 'All' ? (
@@ -250,14 +322,35 @@ const handleExportCSV = async () => {
             </View>
           )
         ) : (
-          activities.map((activity, index) => (
+          getFilteredSortedActivities().map((activity, index) => (
             <View key={index} style={styles.card}>
               <Text style={styles.label}>{activity.name}</Text>
               <Text>Time: {format(parseISO(activity.date_time), 'EEEE, MMM d, yyyy • h:mm a')}</Text>
               <Text>Location: {activity.location}</Text>
               <Text>Participants:</Text>
               {activity.participants?.map((p, i) => (
-                <Text key={i}>• {p.name} (Room {p.room_number})</Text>
+                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                  <TouchableOpacity
+                    style={{
+                      width: 20, height: 20, borderRadius: 4, borderWidth: 1,
+                      borderColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : '#aaa',
+                      backgroundColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : 'transparent',
+                      marginRight: 8
+                    }}
+                    onPress={() => {
+                      setCheckedIn(prev => ({
+                        ...prev,
+                        [activity.id]: {
+                          ...prev[activity.id],
+                          [p.id]: !prev[activity.id]?.[p.id]
+                        }
+                      }));
+                    }}
+                  />
+                  <Text style={{ textDecorationLine: checkedIn[activity.id]?.[p.id] ? 'line-through' : 'none' }}>
+                    • {p.name} (Room {p.room_number})
+                  </Text>
+                </View>
               ))}
             </View>
           ))

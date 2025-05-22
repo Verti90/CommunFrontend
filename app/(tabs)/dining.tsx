@@ -25,6 +25,7 @@ interface MealSelection {
   allergies: string[];
   room_service: boolean;
   created_at: string;
+  date: string;
 }
 
 export default function Dining() {
@@ -64,6 +65,11 @@ export default function Dining() {
     fetchUpcomingMeals();
   }, [token, logout, date]);
 
+const mealOrder = { Breakfast: 1, Lunch: 2, Dinner: 3 };
+const sortedMeals = [...meals].sort(
+  (a, b) => (mealOrder[a.meal_type] || 99) - (mealOrder[b.meal_type] || 99)
+);
+
 return (
   <ScrollView style={styles.container}>
     <Text style={styles.header}>Dining</Text>
@@ -88,11 +94,11 @@ return (
       onCancel={() => setShowDatePicker(false)}
     />
 
-    {meals.map((meal) => {
+    {sortedMeals.map((meal) => {
       const selection = upcomingSelections.find(
         (sel) =>
           sel.meal_time.toLowerCase() === meal.meal_type.toLowerCase() &&
-          sel.date === formatDateLocal(date)
+          sel.date === date.toISOString().split('T')[0]
       );
 
       return (
@@ -131,7 +137,7 @@ return (
                         params: {
                           mealTime: meal.meal_type,
                           items: JSON.stringify(meal.items),
-                          date: formatDateLocal(date),
+                          date: date.toISOString().split('T')[0], 
                         },
                       })
                     }

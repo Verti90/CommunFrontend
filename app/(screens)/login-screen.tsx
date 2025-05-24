@@ -14,11 +14,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
-import {
-  isRequired,
-  isUsername,
-  sanitize,
-} from '@utils/validator';
 
 const LoginScreen = () => {
   const { width } = useWindowDimensions();
@@ -49,24 +44,19 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = async () => {
-    if (!isRequired(username)) {
+    if (!username.trim()) {
       return Alert.alert('Missing Username', 'Please enter your username.');
     }
-    if (!isUsername(username.trim())) {
-      return Alert.alert(
-        'Invalid Username',
-        'Username must be 3–30 chars, only letters, numbers, dot, dash, underscore.'
-      );
-    }
-    if (!isRequired(password)) {
+
+    if (!password) {
       return Alert.alert('Missing Password', 'Please enter your password.');
     }
 
     try {
-      await login(sanitize(username), password);
+      await login(username.trim(), password);
 
       if (rememberMe) {
-        await AsyncStorage.setItem('rememberedUsername', sanitize(username));
+        await AsyncStorage.setItem('rememberedUsername', username.trim());
         await AsyncStorage.setItem('rememberedPassword', password);
       } else {
         await AsyncStorage.multiRemove(['rememberedUsername', 'rememberedPassword']);

@@ -325,20 +325,47 @@ const handleExportActivitiesCSV = async () => {
             </View>
           )
         ) : (
-          getFilteredSortedActivities().map((activity, index) => (
-            <View key={index} style={styles.card}>
+          getFilteredSortedActivities().map((activity, i) => (
+            <View
+              key={`activity-${activity.id ?? activity.name ?? i}`}
+              style={styles.card}
+            >
               <Text style={styles.label}>{activity.name}</Text>
-              <Text>Time: {format(parseISO(activity.date_time), 'EEEE, MMM d, yyyy • h:mm a')}</Text>
-              <Text>Location: {activity.location}</Text>
-              <Text>Participants:</Text>
-              {activity.participants?.map((p, i) => (
-                <View key={i} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+              <Text style={styles.cardRow}>
+                <Text style={styles.cardField}>Time:</Text> {format(parseISO(activity.date_time), 'EEEE, MMM d, yyyy • h:mm a')}
+              </Text>
+              <Text style={styles.cardRow}>
+                <Text style={styles.cardField}>Location:</Text> {activity.location}
+              </Text>
+              <Text style={styles.cardField}>Participants:</Text>
+              {activity.participants?.length === 0 && (
+                <Text style={{ color: '#999', marginLeft: 10 }}>No participants</Text>
+              )}
+              {activity.participants?.map((p, j) => (
+                <View
+                  key={`participant-${activity.id ?? i}-${p.id ?? p.name ?? j}`}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    marginBottom: 6,
+                    backgroundColor: checkedIn[activity.id]?.[p.id] ? '#e8f5e9' : '#f4f4f4',
+                    borderRadius: 6,
+                    paddingVertical: 6,
+                    paddingHorizontal: 10,
+                    marginHorizontal: -10,
+                  }}
+                >
                   <TouchableOpacity
                     style={{
-                      width: 20, height: 20, borderRadius: 4, borderWidth: 1,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      borderWidth: 2,
                       borderColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : '#aaa',
-                      backgroundColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : 'transparent',
-                      marginRight: 8
+                      backgroundColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : '#fff',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12,
                     }}
                     onPress={() => {
                       setCheckedIn(prev => ({
@@ -349,9 +376,20 @@ const handleExportActivitiesCSV = async () => {
                         }
                       }));
                     }}
-                  />
-                  <Text style={{ textDecorationLine: checkedIn[activity.id]?.[p.id] ? 'line-through' : 'none' }}>
-                    • {p.name} (Room {p.room_number})
+                  >
+                    {checkedIn[activity.id]?.[p.id] && (
+                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>✓</Text>
+                    )}
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontSize: 17,
+                      color: '#222',
+                      fontWeight: checkedIn[activity.id]?.[p.id] ? '600' : '400',
+                      textDecorationLine: checkedIn[activity.id]?.[p.id] ? 'line-through' : 'none',
+                    }}
+                  >
+                    {`${p.name} (Room ${p.room_number})`}
                   </Text>
                 </View>
               ))}

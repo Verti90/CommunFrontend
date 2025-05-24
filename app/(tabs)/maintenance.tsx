@@ -9,6 +9,8 @@ import {
   isLength,
   sanitize,
 } from '@utils/validator';
+import { convertToLocal } from '@utils/time';
+import { format } from 'date-fns';
 
 const MaintenanceScreen = () => {
   const { token } = useAuth();
@@ -202,7 +204,7 @@ return (
     {req.updated_at && (
       <Text style={styles.infoText}>
         <Text style={styles.label}>Last Updated:</Text>{' '}
-        {new Date(req.updated_at).toLocaleString()}
+        {format(convertToLocal(new Date(req.updated_at)), 'Pp')}
       </Text>
     )}
 

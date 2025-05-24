@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
-import { getWeekRange } from '@utils/time';
+import { getWeekRange, convertToLocal } from '@utils/time';
 import { format, addDays, addMonths, parseISO } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
 
@@ -68,12 +68,19 @@ const fetchActivities = async (date: Date) => {
     };
 
     activities.forEach((activity) => {
-      const localDate = new Date(parseISO(activity.date_time));
+      if (!activity.date_time) return; // skip if missing
+
+      const parsed = parseISO(activity.date_time);
+      if (isNaN(parsed.getTime())) return; // skip if invalid
+
+      const localDate = convertToLocal(parsed);
+      if (isNaN(localDate.getTime())) return; // skip if invalid
+
       const localMidnight = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+      if (isNaN(localMidnight.getTime())) return; // skip if invalid
+
       const day = format(localMidnight, 'EEEE');
-      if (map[day]) {
-        map[day].push(activity);
-      }
+      if (map[day]) map[day].push(activity);
     });
     return map;
   };
@@ -145,7 +152,13 @@ const fetchActivities = async (date: Date) => {
                       style={[styles.activityCard, joined && styles.signedUpCard]}
                     >
                       <Text style={styles.activityText}>
-                        {format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}
+                        {(() => {
+                          if (!activity.date_time) return 'Invalid Time';
+                          const parsed = parseISO(activity.date_time);
+                          const local = convertToLocal(parsed);
+                          if (isNaN(parsed.getTime()) || isNaN(local.getTime())) return 'Invalid Time';
+                          return `${format(local, 'h:mm a')} - ${activity.name}`;
+                        })()}
                       </Text>
                       <Text style={styles.locationText}>📍 {activity.location}</Text>
                       {activity.capacity > 0 && (

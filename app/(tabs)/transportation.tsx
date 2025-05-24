@@ -4,7 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { formatTimeDisplay, isInTimeBlock } from '@utils/time';
+import { formatTimeDisplay, isInTimeBlock, convertToLocal } from '@utils/time';
 import { format } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
 import { fetchProfile } from '@utils/fetchProfile';
@@ -330,7 +330,7 @@ const handleTimeConfirm = (date: Date) => {
 
     {req.updated_at && (
       <Text style={styles.infoText}>
-        <Text style={styles.label}>Last Updated:</Text> {new Date(req.updated_at).toLocaleString()}
+        <Text style={styles.label}>Last Updated:</Text> {format(convertToLocal(new Date(req.updated_at)), 'Pp')}
       </Text>
     )}
 

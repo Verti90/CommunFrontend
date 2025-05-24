@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { formatDateLocal } from '@utils/time';
+import { formatDateLocal, convertToLocal } from '@utils/time';
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
 import { format, parseISO } from 'date-fns';
@@ -64,7 +64,7 @@ export default function ManageReports() {
 
   // Show only upcoming events if toggled
   if (showUpcomingOnly) {
-    filtered = filtered.filter(a => isBefore(now, parseISO(a.date_time)));
+    filtered = filtered.filter(a => isBefore(now, convertToLocal(parseISO(a.date_time))));
   }
 
   // Search by name/location (optional, implement as you like)
@@ -77,8 +77,8 @@ export default function ManageReports() {
 
   // Sort by time
   filtered = filtered.sort((a, b) => {
-    const aTime = parseISO(a.date_time).getTime();
-    const bTime = parseISO(b.date_time).getTime();
+    const aTime = convertToLocal(parseISO(a.date_time)).getTime();
+    const bTime = convertToLocal(parseISO(b.date_time)).getTime();
     return activitySortAsc ? aTime - bTime : bTime - aTime;
   });
 
@@ -186,7 +186,7 @@ const handleExportActivitiesCSV = async () => {
     getFilteredSortedActivities().forEach((activity) => {
       (activity.participants || []).forEach((p) => {
         const checked = checkedIn[getActivityKey(activity)]?.[p.id] ? 'Yes' : 'No';
-        csv += `"${activity.name}","${format(parseISO(activity.date_time), 'yyyy-MM-dd HH:mm')}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
+        csv += `"${activity.name}","${format(convertToLocal(parseISO(activity.date_time)), 'yyyy-MM-dd HH:mm')}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
       });
     });
 
@@ -334,7 +334,7 @@ const handleExportActivitiesCSV = async () => {
             >
               <Text style={styles.label}>{activity.name}</Text>
               <Text style={styles.cardRow}>
-                <Text style={styles.cardField}>Time:</Text> {format(parseISO(activity.date_time), 'EEEE, MMM d, yyyy • h:mm a')}
+                <Text style={styles.cardField}>Time:</Text> {format(convertToLocal(parseISO(activity.date_time)), 'EEEE, MMM d, yyyy • h:mm a')}
               </Text>
               <Text style={styles.cardRow}>
                 <Text style={styles.cardField}>Location:</Text> {activity.location}

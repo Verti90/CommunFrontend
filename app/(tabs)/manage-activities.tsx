@@ -21,7 +21,7 @@ import {
   parseISO,
 } from 'date-fns';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
-import { getWeekRange, getDateForWeekdayIndex } from '@utils/time';
+import { getWeekRange, getDateForWeekdayIndex, convertToLocal } from '@utils/time';
 import { toCentralUtcISOString } from '@utils/time';
 
 interface Activity {
@@ -130,8 +130,17 @@ export default function StaffActivities() {
       Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [], Saturday: [], Sunday: [],
     };
     activities.forEach((activity) => {
-      const localDate = new Date(parseISO(activity.date_time));
+      if (!activity.date_time) return; // Defensive: skip if missing
+
+      const parsed = parseISO(activity.date_time);
+      if (isNaN(parsed.getTime())) return; // skip if invalid
+
+      const localDate = convertToLocal(parsed);
+      if (isNaN(localDate.getTime())) return; // skip if invalid
+
       const localMidnight = new Date(localDate.getFullYear(), localDate.getMonth(), localDate.getDate());
+      if (isNaN(localMidnight.getTime())) return; // skip if invalid
+
       const day = format(localMidnight, 'EEEE');
       if (map[day]) map[day].push(activity);
     });
@@ -189,7 +198,13 @@ export default function StaffActivities() {
                 return (
                   <View key={activity.id} style={styles.activityCard}>
                     <Text style={styles.activityText}>
-                      {format(parseISO(activity.date_time), 'h:mm a')} - {activity.name}
+                      {(() => {
+                        const parsed = parseISO(activity.date_time);
+                        const local = convertToLocal(parsed);
+                        return (!activity.date_time || isNaN(parsed.getTime()) || isNaN(local.getTime()))
+                          ? 'Invalid Time'
+                          : `${format(local, 'h:mm a')} - ${activity.name}`;
+                      })()}
                     </Text>
                     <Text style={styles.locationText}>📍 {activity.location}</Text>
                     {activity.capacity > 0 && (

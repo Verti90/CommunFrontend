@@ -1,6 +1,5 @@
-import { addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { addDays, startOfWeek, endOfWeek, format, isWithinInterval } from 'date-fns';
 import moment from 'moment-timezone';
-import { format, isWithinInterval } from 'date-fns';
 
 const CENTRAL_TZ = 'America/Chicago';
 
@@ -56,4 +55,19 @@ export const isInTimeBlock = (
   blockEnd.setHours(endHour, 0, 0, 0);
 
   return localDateTime >= blockStart && localDateTime < blockEnd;
+};
+
+/**
+ * Converts a UTC or ISO string Date object to the local device time zone.
+ * Used when interpreting backend-stored UTC times for frontend display.
+ */
+export const convertToLocal = (date: Date): Date => {
+  if (!date || isNaN(date.getTime())) return new Date('Invalid Date');
+
+  const localString = date.toLocaleString('en-US', {
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+  });
+
+  const converted = new Date(localString);
+  return isNaN(converted.getTime()) ? new Date('Invalid Date') : converted;
 };

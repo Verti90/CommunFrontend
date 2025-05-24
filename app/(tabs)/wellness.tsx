@@ -12,6 +12,7 @@ import {
   isLength,
   sanitize,
 } from '@utils/validator';
+import { convertToLocal } from '@utils/time';
 
 interface MedicineEntry {
   id: string;
@@ -213,7 +214,7 @@ export default function Wellness() {
                 <Text style={styles.bold}>{item.name}</Text> — {item.dosage}
               </Text>
               <Text style={styles.entryText}>
-                {format(item.datetime, 'PPpp')} ({item.frequency})
+                {format(convertToLocal(item.datetime), 'PPpp')} ({item.frequency})
               </Text>
             </View>
             <TouchableOpacity onPress={() => handleDelete(item)}>

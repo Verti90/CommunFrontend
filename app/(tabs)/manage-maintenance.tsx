@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Alert } from 'react-native';
 import apiClient from '@services/api';
 import { Picker } from '@react-native-picker/picker';
+import { convertToLocal } from '@utils/time';
 
 export default function ManageMaintenance() {
   const [requests, setRequests] = useState<any[]>([]);
@@ -28,8 +29,8 @@ export default function ManageMaintenance() {
       }
 
       data.sort((a: any, b: any) => {
-        const dateA = new Date(a.created_at).getTime();
-        const dateB = new Date(b.created_at).getTime();
+        const dateA = convertToLocal(new Date(a.created_at)).getTime();
+        const dateB = convertToLocal(new Date(b.created_at)).getTime();
         return sortDirection === 'Newest' ? dateB - dateA : dateA - dateB;
       });
 

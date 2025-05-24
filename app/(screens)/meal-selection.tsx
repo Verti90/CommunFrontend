@@ -72,39 +72,45 @@ export default function MealSelectionScreen() {
 
   const handleSubmit = async () => {
     if (!mainItem || !sideItem || !drink) {
-      return Alert.alert('Missing fields', 'Please complete all required selections.');
+      return Alert.alert('Missing Fields', 'Please complete all required selections.');
     }
 
-    setLoading(true);
-    try {
-      await apiClient.post(
-        '/meals/',
-        {
-          date: passedDate,
-          meal_time: mealTime,
-          main_item: `${mainItem}${dessertItem ? `, Dessert: ${dessertItem}` : ''}`,
-          protein: sideItem,
-          drinks: [drink],
-          room_service: roomService,
-          guest_name: guestEnabled ? guestName : '',
-          guest_meal: guestEnabled ? `Main: ${guestMain}, Side: ${guestSide}, Drink: ${guestDrink}` : '',
-          allergies: hasAllergies
-            ? [...selectedAllergens, ...allergies.split(',').map((s) => s.trim())].filter(Boolean)
-            : [],
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+    if (guestEnabled) {
+      if (!guestName.trim() || !guestMain || !guestSide || !guestDrink) {
+        return Alert.alert('Missing Guest Info', 'Please complete all guest selections.');
+      }
+    }
 
-      Alert.alert('Success', 'Meal selection submitted.', [
-        { text: 'OK', onPress: () => router.replace('/dining') },
-      ]);
+    const combinedAllergies = hasAllergies
+      ? [...selectedAllergens, ...allergies.split(',').map((s) => s.trim())].filter(Boolean)
+      : [];
+
+    if (hasAllergies && combinedAllergies.length === 0) {
+      return Alert.alert('Missing Allergies', 'You selected Yes for allergies but did not specify any.');
+    }
+
+    const payload = {
+      meal_time: mealType,
+      date: formatDateLocal(date),
+      main_item: mainItem,
+      protein: sideItem,
+      drinks: [drink],
+      guest_name: guestEnabled ? guestName.trim() : '',
+      guest_meal: guestEnabled ? `${guestMain} with ${guestSide} and ${guestDrink}` : '',
+      allergies: combinedAllergies,
+      room_service: roomService,
+    };
+
+    try {
+      await apiClient.post('/meal-selections/', payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      Alert.alert('Success', 'Your meal selection has been submitted.');
+      resetForm();
     } catch (err) {
-      console.error('❌ Submission Error:', err);
-      Alert.alert('Error', 'Submission failed.');
-    } finally {
-      setLoading(false);
+      console.error(err);
+      Alert.alert('Error', 'Something went wrong while submitting your selection.');
     }
   };
 

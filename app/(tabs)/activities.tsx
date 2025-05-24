@@ -139,7 +139,6 @@ const fetchActivities = async (date: Date) => {
               ) : (
                 groupedActivities[day].map((activity) => {
                   const joined = user?.id && activity.participants.includes(user.id);
-                  console.log(`[Resident View] ${activity.name} | ${activity.date_time} | ${activity.participants.length}/${activity.capacity}`);
                   return (
                     <View
                       key={`${activity.id}-${activity.date_time}`}
@@ -166,7 +165,7 @@ const fetchActivities = async (date: Date) => {
                         >
                           <Text style={styles.cancelText}>×</Text>
                         </TouchableOpacity>
-                      ) : (
+                      ) : activity.capacity > 0 && activity.participants.length >= activity.capacity ? null : (
                         <TouchableOpacity onPress={() => handleSignup(activity.id, activity.date_time)}>
                           <Text style={styles.signupLink}>Sign Up</Text>
                         </TouchableOpacity>

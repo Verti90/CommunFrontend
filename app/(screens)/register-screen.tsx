@@ -40,37 +40,66 @@ const RegisterScreen = () => {
   }, []);
 
 const handleRegister = async () => {
+  if (!firstName.trim() || !lastName.trim()) {
+    return Alert.alert('Missing Name', 'Please enter both your first and last name.');
+  }
+
+  if (!username.trim()) {
+    return Alert.alert('Missing Username', 'Please enter a username.');
+  }
+
+  if (!email.trim()) {
+    return Alert.alert('Missing Email', 'Please enter an email address.');
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email.trim())) {
+    return Alert.alert('Invalid Email', 'Please enter a valid email address.');
+  }
+
+  if (!roomNumber.trim()) {
+    return Alert.alert('Missing Room Number', 'Please enter your room number.');
+  }
+
+  if (!password || !confirmPassword) {
+    return Alert.alert('Missing Password', 'Please enter and confirm your password.');
+  }
+
+  if (password.length < 6) {
+    return Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
+  }
+
   if (password !== confirmPassword) {
-    Alert.alert('Registration Error', 'Passwords do not match');
-    return;
+    return Alert.alert('Mismatch', 'Passwords do not match.');
   }
 
   setLoading(true);
   try {
     await apiClient.post('/register/', {
-      username,
-      email,
+      username: username.trim(),
+      email: email.trim(),
       password,
-      first_name: firstName,
-      last_name: lastName,
-      room_number: roomNumber,
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
+      room_number: roomNumber.trim(),
     });
-    Alert.alert('Registration Successful', 'You can now log in');
+
+    Alert.alert('Registration Successful', 'You can now log in.');
     router.push('/login');
   } catch (error: any) {
     if (__DEV__) console.log('Registration error:', error);
     if (error.response) {
       const data = error.response.data;
       if (data.username?.includes('A user with that username already exists.')) {
-        Alert.alert('Registration Error', 'Username already exists. Please choose another.');
+        Alert.alert('Username Taken', 'Please choose another username.');
       } else if (data.email?.includes('user with this email address already exists.')) {
-        Alert.alert('Registration Error', 'Email already exists. Please use a different email address.');
+        Alert.alert('Email Taken', 'That email is already in use.');
       } else {
         const firstError = Object.values(data)[0]?.[0] || 'Please check your input.';
         Alert.alert('Registration Error', firstError);
       }
     } else {
-      Alert.alert('Registration Error', 'An unexpected error occurred.');
+      Alert.alert('Error', 'An unexpected error occurred. Please try again later.');
     }
   } finally {
     setLoading(false);

@@ -44,17 +44,25 @@ const LoginScreen = () => {
   }, []);
 
   const handleLogin = async () => {
+    if (!username.trim()) {
+      return Alert.alert('Missing Username', 'Please enter your username.');
+    }
+
+    if (!password) {
+      return Alert.alert('Missing Password', 'Please enter your password.');
+    }
+
     try {
-      await login(username, password);
+      await login(username.trim(), password);
 
       if (rememberMe) {
-        await AsyncStorage.setItem('rememberedUsername', username);
+        await AsyncStorage.setItem('rememberedUsername', username.trim());
         await AsyncStorage.setItem('rememberedPassword', password);
       } else {
         await AsyncStorage.multiRemove(['rememberedUsername', 'rememberedPassword']);
       }
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message || 'An unexpected error occurred.');
+      Alert.alert('Login Failed', error.message || 'Invalid username or password.');
     }
   };
 

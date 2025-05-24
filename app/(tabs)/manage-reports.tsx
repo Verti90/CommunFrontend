@@ -29,7 +29,7 @@ export default function ManageReports() {
   // Activities Features
   const [activitySortAsc, setActivitySortAsc] = useState(true); // Earliest to latest by default
   const [showUpcomingOnly, setShowUpcomingOnly] = useState(false); // Hide past events by default
-  const [checkedIn, setCheckedIn] = useState({}); // { [activityId]: { [participantId]: true/false } }
+  const [checkedIn, setCheckedIn] = useState<Record<string, Record<number, boolean>>>({});
 
   const cycleRoomServiceFilter = () => {
     setRoomServiceFilter((prev) =>
@@ -156,6 +156,8 @@ const applyFilters = (meals) => {
     });
 };
 
+const getActivityKey = (activity) => `${activity.id}_${activity.date_time}`;
+
 const handleExportCSV = async () => {
   try {
     let csv = 'Meal Type,Room,Name,Main,Side,Drink,Room Service,Guest Name,Guest Meal,Allergies\n';
@@ -183,7 +185,7 @@ const handleExportActivitiesCSV = async () => {
     let csv = 'Activity,Date/Time,Location,Participant,Room,Checked In\n';
     getFilteredSortedActivities().forEach((activity) => {
       (activity.participants || []).forEach((p) => {
-        const checked = checkedIn[activity.id]?.[p.id] ? 'Yes' : 'No';
+        const checked = checkedIn[getActivityKey(activity)]?.[p.id] ? 'Yes' : 'No';
         csv += `"${activity.name}","${format(parseISO(activity.date_time), 'yyyy-MM-dd HH:mm')}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
       });
     });
@@ -341,58 +343,64 @@ const handleExportActivitiesCSV = async () => {
               {activity.participants?.length === 0 && (
                 <Text style={{ color: '#999', marginLeft: 10 }}>No participants</Text>
               )}
-              {activity.participants?.map((p, j) => (
-                <View
-                  key={`participant-${activity.id ?? i}-${p.id ?? p.name ?? j}`}
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    marginBottom: 6,
-                    backgroundColor: checkedIn[activity.id]?.[p.id] ? '#e8f5e9' : '#f4f4f4',
-                    borderRadius: 6,
-                    paddingVertical: 6,
-                    paddingHorizontal: 10,
-                    marginHorizontal: -10,
-                  }}
-                >
-                  <TouchableOpacity
-                    style={{
-                      width: 22,
-                      height: 22,
-                      borderRadius: 6,
-                      borderWidth: 2,
-                      borderColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : '#aaa',
-                      backgroundColor: checkedIn[activity.id]?.[p.id] ? '#4C7860' : '#fff',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12,
-                    }}
-                    onPress={() => {
-                      setCheckedIn(prev => ({
-                        ...prev,
-                        [activity.id]: {
-                          ...prev[activity.id],
-                          [p.id]: !prev[activity.id]?.[p.id]
-                        }
-                      }));
-                    }}
-                  >
-                    {checkedIn[activity.id]?.[p.id] && (
-                      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>✓</Text>
-                    )}
-                  </TouchableOpacity>
-                  <Text
-                    style={{
-                      fontSize: 17,
-                      color: '#222',
-                      fontWeight: checkedIn[activity.id]?.[p.id] ? '600' : '400',
-                      textDecorationLine: checkedIn[activity.id]?.[p.id] ? 'line-through' : 'none',
-                    }}
-                  >
-                    {`${p.name} (Room ${p.room_number})`}
-                  </Text>
-                </View>
-              ))}
+                {activity.participants?.map((p, j) => {
+                  const activityKey = getActivityKey(activity);
+                  const isChecked = checkedIn[activityKey]?.[p.id];
+
+                  return (
+                    <View
+                      key={`participant-${activity.id ?? i}-${p.id ?? p.name ?? j}`}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginBottom: 6,
+                        backgroundColor: isChecked ? '#e8f5e9' : '#f4f4f4',
+                        borderRadius: 6,
+                        paddingVertical: 6,
+                        paddingHorizontal: 10,
+                        marginHorizontal: -10,
+                      }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 6,
+                          borderWidth: 2,
+                          borderColor: isChecked ? '#4C7860' : '#aaa',
+                          backgroundColor: isChecked ? '#4C7860' : '#fff',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginRight: 12,
+                        }}
+                        onPress={() => {
+                          setCheckedIn(prev => ({
+                            ...prev,
+                            [activityKey]: {
+                              ...prev[activityKey],
+                              [p.id]: !prev[activityKey]?.[p.id]
+                            }
+                          }));
+                        }}
+                      >
+                        {isChecked && (
+                          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>✓</Text>
+                        )}
+                      </TouchableOpacity>
+
+                      <Text
+                        style={{
+                          fontSize: 17,
+                          color: '#222',
+                          fontWeight: isChecked ? '600' : '400',
+                          textDecorationLine: isChecked ? 'line-through' : 'none',
+                        }}
+                      >
+                        {`${p.name} (Room ${p.room_number})`}
+                      </Text>
+                    </View>
+                  );
+                })}
             </View>
           ))
         )}

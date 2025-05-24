@@ -9,6 +9,7 @@ import apiClient from '@services/api';
 import { useAuth } from '@auth';
 import { format, parseISO } from 'date-fns';
 import isBefore from 'date-fns/isBefore';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ManageReports() {
   const { token } = useAuth();
@@ -110,10 +111,12 @@ export default function ManageReports() {
     }
   };
 
-  useEffect(() => {
-    if (activeTab === 'dining') fetchDiningData();
-    else fetchActivityData();
-  }, [activeTab, selectedDate]);
+  useFocusEffect(
+    React.useCallback(() => {
+      if (activeTab === 'dining') fetchDiningData();
+      else fetchActivityData();
+    }, [activeTab, selectedDate])
+  );
 
   const groupedMeals = { Breakfast: [], Lunch: [], Dinner: [] };
   mealSelections.forEach((item) => {

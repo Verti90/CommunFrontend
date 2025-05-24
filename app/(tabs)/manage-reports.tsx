@@ -186,7 +186,15 @@ const handleExportActivitiesCSV = async () => {
     getFilteredSortedActivities().forEach((activity) => {
       (activity.participants || []).forEach((p) => {
         const checked = checkedIn[getActivityKey(activity)]?.[p.id] ? 'Yes' : 'No';
-        csv += `"${activity.name}","${format(convertToLocal(parseISO(activity.date_time)), 'yyyy-MM-dd HH:mm')}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
+        let dateStr = 'Invalid Time';
+        if (activity.date_time) {
+          const parsed = parseISO(activity.date_time);
+          const local = convertToLocal(parsed);
+          if (!isNaN(parsed.getTime()) && !isNaN(local.getTime())) {
+            dateStr = format(local, 'yyyy-MM-dd HH:mm');
+          }
+        }
+        csv += `"${activity.name}","${dateStr}","${activity.location}","${p.name}","${p.room_number}",${checked}\n`;
       });
     });
 
@@ -334,7 +342,13 @@ const handleExportActivitiesCSV = async () => {
             >
               <Text style={styles.label}>{activity.name}</Text>
               <Text style={styles.cardRow}>
-                <Text style={styles.cardField}>Time:</Text> {format(convertToLocal(parseISO(activity.date_time)), 'EEEE, MMM d, yyyy • h:mm a')}
+                <Text style={styles.cardField}>Time:</Text> {(() => {
+                  if (!activity.date_time) return 'Invalid Time';
+                  const parsed = parseISO(activity.date_time);
+                  const local = convertToLocal(parsed);
+                  if (isNaN(parsed.getTime()) || isNaN(local.getTime())) return 'Invalid Time';
+                  return format(local, 'EEEE, MMM d, yyyy • h:mm a');
+                })()}
               </Text>
               <Text style={styles.cardRow}>
                 <Text style={styles.cardField}>Location:</Text> {activity.location}

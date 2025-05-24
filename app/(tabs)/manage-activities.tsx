@@ -84,15 +84,21 @@ export default function StaffActivities() {
   };
 
   const addActivity = async () => {
-  const missingFields = [];
-  if (!newActivity.name) missingFields.push('Name');
-  if (!newActivity.location) missingFields.push('Location');
-  if (!newActivity.date_time) missingFields.push('Date & Time');
+    const missingFields = [];
+    if (!newActivity.name) missingFields.push('Name');
+    if (!newActivity.location) missingFields.push('Location');
+    if (!newActivity.date_time) missingFields.push('Date & Time');
 
-  if (missingFields.length > 0) {
-    Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
-    return;
-  }
+    // New: check if date_time is a valid ISO string!
+    const parsed = newActivity.date_time ? new Date(newActivity.date_time) : null;
+    if (!parsed || isNaN(parsed.getTime())) {
+      missingFields.push('Valid Date & Time');
+    }
+
+    if (missingFields.length > 0) {
+      Alert.alert('Missing Fields', `Please provide: ${missingFields.join(', ')}`);
+      return;
+    }
 
   try {
     await apiClient.post('activities/', {
@@ -270,20 +276,26 @@ export default function StaffActivities() {
 	  isVisible={isDatePickerVisible}
 	  mode="date"
 	  date={selectedDate || new Date()}
-	  onConfirm={(date) => {
-	  setDatePickerVisible(false);
-	  const time = selectedDate || new Date();
-	  const combined = new Date(
-	    date.getFullYear(),
-	    date.getMonth(),
-	    date.getDate(),
-	    time.getHours(),
-	    time.getMinutes()
-	  );
+    onConfirm={(date) => {
+      setDatePickerVisible(false);
+      const time = selectedDate || new Date();
+      const combined = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes()
+      );
 
-	  setSelectedDate(combined);
-	  setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
-	}}
+      // Guard for invalid date/time
+      if (isNaN(combined.getTime())) {
+        Alert.alert('Error', 'Please select a valid date and time.');
+        return;
+      }
+
+      setSelectedDate(combined);
+      setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
+    }}
 	  onCancel={() => setDatePickerVisible(false)}
 	/>
 
@@ -291,21 +303,26 @@ export default function StaffActivities() {
 	  isVisible={isTimePickerVisible}
 	  mode="time"
 	  date={selectedDate || new Date()}
-	  onConfirm={(time) => {
-	  setTimePickerVisible(false);
-	  const date = selectedDate || new Date();
-	  const combined = new Date(
-	    date.getFullYear(),
-	    date.getMonth(),
-	    date.getDate(),
-	    time.getHours(),
-	    time.getMinutes()
-	  );
-	
-	  setSelectedDate(combined);
-	  setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
-	}}
+    onConfirm={(time) => {
+      setTimePickerVisible(false);
+      const date = selectedDate || new Date();
+      const combined = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate(),
+        time.getHours(),
+        time.getMinutes()
+      );
 
+      // Guard for invalid date/time
+      if (isNaN(combined.getTime())) {
+        Alert.alert('Error', 'Please select a valid date and time.');
+        return;
+      }
+
+      setSelectedDate(combined);
+      setNewActivity((prev) => ({ ...prev, date_time: toCentralUtcISOString(combined) }));
+    }}
   onCancel={() => setTimePickerVisible(false)}
 />
 

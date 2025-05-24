@@ -3,6 +3,12 @@ import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, ScrollView 
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import { fetchProfile } from '@utils/fetchProfile';
+import {
+  isValidEmail,
+  isRequired,
+  sanitize,
+  isLength,
+} from '@utils/validator';
 
 interface UserProfile {
   id: number;
@@ -89,13 +95,29 @@ useEffect(() => {
         setIsEditing(true);
         return;
       }
+
+      // Validation
+      if (!isRequired(profile.email)) {
+        return Alert.alert('Missing Email', 'Please enter your email.');
+      }
+      if (!isValidEmail(profile.email.trim())) {
+        return Alert.alert('Invalid Email', 'Please enter a valid email address.');
+      }
+      if (
+        profile.room_number !== undefined &&
+        profile.room_number !== '' &&
+        !isLength(profile.room_number, 1, 20)
+      ) {
+        return Alert.alert('Invalid Room Number', 'Room number must be 1-20 characters.');
+      }
+
       try {
         await apiClient.post(
           'profile/preferences/',
           {
-            email: profile.email,
+            email: sanitize(profile.email),
             ...(profile.room_number !== undefined && profile.room_number !== ''
-              ? { room_number: profile.room_number }
+              ? { room_number: sanitize(profile.room_number) }
               : {}),
           },
           { headers: { Authorization: `Bearer ${token}` } }
@@ -104,8 +126,8 @@ useEffect(() => {
         setOriginalProfile(profile);
         setIsEditing(false);
       } catch (error) {
-        console.error('Error fetching profile:', error);
-        Alert.alert('Error', 'Unable to load your profile. Please try again later.');
+        console.error('Error updating profile:', error);
+        Alert.alert('Error', 'Unable to update your profile. Please try again later.');
       }
     }}
   >

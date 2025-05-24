@@ -12,6 +12,11 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import apiClient from '@services/api';
 import { useAuth } from '@auth';
 import { formatDateLocal } from '@utils/time';
+import {
+  isRequired,
+  isLength,
+  sanitize,
+} from '@utils/validator';
 
 export default function MealSelectionScreen() {
   const [mainItem, setMainItem] = useState('');
@@ -75,9 +80,25 @@ export default function MealSelectionScreen() {
       return Alert.alert('Missing Fields', 'Please complete all required selections.');
     }
 
+    if (!isLength(mainItem, 1, 100)) {
+      return Alert.alert('Invalid Main Item', 'Main item must be 1-100 characters.');
+    }
+    if (!isLength(sideItem, 1, 100)) {
+      return Alert.alert('Invalid Side Item', 'Side item must be 1-100 characters.');
+    }
+    if (!isLength(drink, 1, 100)) {
+      return Alert.alert('Invalid Drink', 'Drink must be 1-100 characters.');
+    }
+
     if (guestEnabled) {
       if (!guestName.trim() || !guestMain || !guestSide || !guestDrink) {
         return Alert.alert('Missing Guest Info', 'Please complete all guest selections.');
+      }
+      if (!isLength(guestName, 1, 100)) {
+        return Alert.alert('Invalid Guest Name', 'Guest name must be 1-100 characters.');
+      }
+      if (!isLength(guestMain, 1, 100) || !isLength(guestSide, 1, 100) || !isLength(guestDrink, 1, 100)) {
+        return Alert.alert('Invalid Guest Meal', 'Guest selections must be 1-100 characters.');
       }
     }
 
@@ -90,18 +111,19 @@ export default function MealSelectionScreen() {
     }
 
     const payload = {
-      meal_time: mealType,
+      meal_time: mealTime,
       date: formatDateLocal(date),
-      main_item: mainItem,
-      protein: sideItem,
-      drinks: [drink],
-      guest_name: guestEnabled ? guestName.trim() : '',
-      guest_meal: guestEnabled ? `${guestMain} with ${guestSide} and ${guestDrink}` : '',
-      allergies: combinedAllergies,
+      main_item: sanitize(mainItem),
+      protein: sanitize(sideItem),
+      drinks: [sanitize(drink)],
+      guest_name: guestEnabled ? sanitize(guestName) : '',
+      guest_meal: guestEnabled ? `${sanitize(guestMain)} with ${sanitize(guestSide)} and ${sanitize(guestDrink)}` : '',
+      allergies: combinedAllergies.map(sanitize),
       room_service: roomService,
     };
 
     try {
+      setLoading(true);
       await apiClient.post('/meal-selections/', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -111,6 +133,8 @@ export default function MealSelectionScreen() {
     } catch (err) {
       console.error(err);
       Alert.alert('Error', 'Something went wrong while submitting your selection.');
+    } finally {
+      setLoading(false);
     }
   };
 

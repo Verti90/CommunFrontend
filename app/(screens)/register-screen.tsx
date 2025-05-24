@@ -16,6 +16,13 @@ import {
 import { useRouter } from 'expo-router';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
+import {
+  isRequired,
+  isLength,
+  isValidEmail,
+  isUsername,
+  sanitize,
+} from '@utils/validator';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -40,35 +47,27 @@ const RegisterScreen = () => {
   }, []);
 
 const handleRegister = async () => {
-  if (!firstName.trim() || !lastName.trim()) {
-    return Alert.alert('Missing Name', 'Please enter both your first and last name.');
+  if (!isRequired(firstName)) {
+    return Alert.alert('Missing Name', 'Please enter your first name.');
   }
-
-  if (!username.trim()) {
-    return Alert.alert('Missing Username', 'Please enter a username.');
+  if (!isRequired(lastName)) {
+    return Alert.alert('Missing Name', 'Please enter your last name.');
   }
-
-  if (!email.trim()) {
-    return Alert.alert('Missing Email', 'Please enter an email address.');
+  if (!isUsername(username.trim())) {
+    return Alert.alert(
+      'Invalid Username',
+      'Username must be 3–30 chars, only letters, numbers, dot, dash, underscore.'
+    );
   }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email.trim())) {
+  if (!isValidEmail(email.trim())) {
     return Alert.alert('Invalid Email', 'Please enter a valid email address.');
   }
-
-  if (!roomNumber.trim()) {
+  if (!isRequired(roomNumber)) {
     return Alert.alert('Missing Room Number', 'Please enter your room number.');
   }
-
-  if (!password || !confirmPassword) {
-    return Alert.alert('Missing Password', 'Please enter and confirm your password.');
+  if (!isLength(password, 6, 128)) {
+    return Alert.alert('Weak Password', 'Password must be at least 6 characters.');
   }
-
-  if (password.length < 6) {
-    return Alert.alert('Weak Password', 'Password must be at least 6 characters long.');
-  }
-
   if (password !== confirmPassword) {
     return Alert.alert('Mismatch', 'Passwords do not match.');
   }
@@ -76,12 +75,12 @@ const handleRegister = async () => {
   setLoading(true);
   try {
     await apiClient.post('/register/', {
-      username: username.trim(),
-      email: email.trim(),
+      username: sanitize(username),
+      email: sanitize(email),
       password,
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      room_number: roomNumber.trim(),
+      first_name: sanitize(firstName),
+      last_name: sanitize(lastName),
+      room_number: sanitize(roomNumber),
     });
 
     Alert.alert('Registration Successful', 'You can now log in.');

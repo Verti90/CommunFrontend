@@ -7,6 +7,11 @@ import { Picker } from '@react-native-picker/picker';
 import { useFocusEffect } from '@react-navigation/native';
 import * as Notifications from 'expo-notifications';
 import { format } from 'date-fns';
+import {
+  isRequired,
+  isLength,
+  sanitize,
+} from '@utils/validator';
 
 interface MedicineEntry {
   id: string;
@@ -93,17 +98,41 @@ export default function Wellness() {
   };
 
   const handleAddMedicine = async () => {
-    if (!medicineName.trim() || !dosage.trim() || !dateTime) {
-      Alert.alert('Missing Info', 'Please complete all fields.');
+    // Validate medicine name
+    if (!isRequired(medicineName)) {
+      Alert.alert('Missing Info', 'Medicine name is required.');
+      return;
+    }
+    if (!isLength(medicineName, 1, 100)) {
+      Alert.alert('Invalid Name', 'Medicine name must be 1-100 characters.');
+      return;
+    }
+    // Validate dosage
+    if (!isRequired(dosage)) {
+      Alert.alert('Missing Info', 'Dosage is required.');
+      return;
+    }
+    if (!isLength(dosage, 1, 100)) {
+      Alert.alert('Invalid Dosage', 'Dosage must be 1-100 characters.');
+      return;
+    }
+    // Validate date/time
+    if (!dateTime) {
+      Alert.alert('Missing Info', 'Please select a date and time.');
       return;
     }
 
-    const notificationId = await scheduleReminder(medicineName, dosage, dateTime, frequency);
+    const notificationId = await scheduleReminder(
+      sanitize(medicineName),
+      sanitize(dosage),
+      dateTime,
+      frequency
+    );
 
     const newEntry: MedicineEntry = {
       id: Date.now().toString(),
-      name: medicineName,
-      dosage,
+      name: sanitize(medicineName),
+      dosage: sanitize(dosage),
       datetime: dateTime,
       frequency,
       notificationId,

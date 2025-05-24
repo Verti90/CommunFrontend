@@ -4,6 +4,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '@auth';
 import apiClient from '@services/api';
 import { fetchProfile } from '@utils/fetchProfile';
+import {
+  isRequired,
+  isLength,
+  sanitize,
+} from '@utils/validator';
 
 const MaintenanceScreen = () => {
   const { token } = useAuth();
@@ -63,16 +68,22 @@ const fetchRequests = async () => {
       return;
     }
 
-    if (selectedRequest === 'WorkOrder' && !description.trim()) {
-      Alert.alert('Description Required', 'Please describe the issue.');
-      return;
+    if (selectedRequest === 'WorkOrder') {
+      if (!isRequired(description)) {
+        Alert.alert('Description Required', 'Please describe the issue.');
+        return;
+      }
+      if (!isLength(description, 5, 1000)) {
+        Alert.alert('Description Too Short', 'Please enter at least 5 characters and less than 1000.');
+        return;
+      }
     }
 
     const requestData = {
       resident_name: `${profile.first_name} ${profile.last_name}`,
       room_number: profile.room_number,
       request_type: selectedRequest === 'WorkOrder' ? 'Maintenance' : 'Housekeeping',
-      description: selectedRequest === 'WorkOrder' ? description : 'Housekeeping requested',
+      description: selectedRequest === 'WorkOrder' ? sanitize(description) : 'Housekeeping requested',
       status: 'Pending',
     };
 

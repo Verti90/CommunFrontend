@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import apiClient from '@services/api';
 import { router } from 'expo-router';
+import {
+  isRequired,
+  isLength,
+  sanitize,
+} from '@utils/validator';
 
 const icons = ['🎉', '💉', '📚', '🚌', '🍽️', '🛠️'];
 
@@ -11,10 +16,24 @@ export default function ManageFeed() {
   const [selectedIcon, setSelectedIcon] = useState(icons[0]);
 
   const handleSubmit = async () => {
+    // Validate
+    if (!isRequired(title)) {
+      return Alert.alert('Missing Title', 'Please enter a title for your announcement.');
+    }
+    if (!isLength(title, 3, 200)) {
+      return Alert.alert('Title Too Short', 'Title must be at least 3 characters and less than 200.');
+    }
+    if (!isRequired(content)) {
+      return Alert.alert('Missing Message', 'Please enter the message for your announcement.');
+    }
+    if (!isLength(content, 5, 1000)) {
+      return Alert.alert('Message Too Short', 'Message must be at least 5 characters and less than 1000.');
+    }
+
     try {
       await apiClient.post('/feed/', {
-        title: `${selectedIcon} ${title}`,
-        content,
+        title: `${selectedIcon} ${sanitize(title)}`,
+        content: sanitize(content),
       });
       Alert.alert('Success', 'Announcement added.');
       router.back();

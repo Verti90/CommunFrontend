@@ -9,6 +9,11 @@ import { format } from 'date-fns';
 import { sendImmediateNotification } from '@utils/notifications';
 import { fetchProfile } from '@utils/fetchProfile';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  isRequired,
+  isLength,
+  sanitize,
+} from '@utils/validator';
 
 export default function Transportation() {
   const { token, logout } = useAuth();
@@ -92,87 +97,94 @@ const handleTimeConfirm = (date: Date) => {
   setPickerTarget(null);
 };
 
-const handleSubmit = async () => {
-  if (!selectedRequest) {
-    Alert.alert('Selection Required', 'Please choose a transportation type.');
-    return;
-  }
-
-  const requestTimeStr = selectedRequest === 'Medical' ? appointmentTime : pickupTime;
-  if (!requestTimeStr) {
-    Alert.alert('Missing Time', 'Please select a time for the request.');
-    return;
-  }
-
-  const requestTime = new Date(requestTimeStr);
-  const blockStart = Math.floor(requestTime.getHours() / 2) * 2;
-  const blockEnd = blockStart + 2;
-
-  const sameBlockRequests = requests.filter((r) => {
-    const timeStr = r.pickup_time || r.appointment_time;
-    return timeStr && isInTimeBlock(timeStr, requestTime, blockStart, blockEnd) && r.status !== 'Cancelled';
-  });
-
-  if (sameBlockRequests.length >= 2) {
-    const startTime = new Date(requestTime);
-    startTime.setHours(blockStart, 0, 0, 0);
-
-    const endTime = new Date(requestTime);
-    endTime.setHours(blockEnd, 0, 0, 0);
-
-    Alert.alert(
-      'Block Full',
-      `Sorry, the ${format(startTime, 'h:mm a')}–${format(endTime, 'h:mm a')} time block is already full. Please choose a different time.`
-    );
-    return;
-  }
-
-  const baseData = {
-    resident_name: `${profile.first_name} ${profile.last_name}`,
-    room_number: profile.room_number,
-    request_type: selectedRequest,
-    status: 'Pending',
-  };
-
-  let requestData;
-  if (selectedRequest === 'Medical') {
-    if (!doctorName.trim()) {
-      Alert.alert('Missing Info', 'Doctor Name is required.');
+  const handleSubmit = async () => {
+    if (!selectedRequest) {
+      Alert.alert('Selection Required', 'Please choose a transportation type.');
       return;
     }
-    requestData = {
-      ...baseData,
-      doctor_name: doctorName,
-      appointment_time: appointmentTime,
-      address,
-    };
-  } else {
-    if (!destinationName.trim()) {
-      Alert.alert('Missing Info', 'Destination Name is required.');
+
+    const requestTimeStr = selectedRequest === 'Medical' ? appointmentTime : pickupTime;
+    if (!requestTimeStr) {
+      Alert.alert('Missing Time', 'Please select a time for the request.');
       return;
     }
-    requestData = {
-      ...baseData,
-      destination_name: destinationName,
-      pickup_time: pickupTime,
-      address,
+
+    const requestTime = new Date(requestTimeStr);
+    const blockStart = Math.floor(requestTime.getHours() / 2) * 2;
+    const blockEnd = blockStart + 2;
+
+    const sameBlockRequests = requests.filter((r) => {
+      const timeStr = r.pickup_time || r.appointment_time;
+      return timeStr && isInTimeBlock(timeStr, requestTime, blockStart, blockEnd) && r.status !== 'Cancelled';
+    });
+
+    if (sameBlockRequests.length >= 2) {
+      const startTime = new Date(requestTime);
+      startTime.setHours(blockStart, 0, 0, 0);
+
+      const endTime = new Date(requestTime);
+      endTime.setHours(blockEnd, 0, 0, 0);
+
+      Alert.alert(
+        'Block Full',
+        `Sorry, the ${format(startTime, 'h:mm a')}–${format(endTime, 'h:mm a')} time block is already full. Please choose a different time.`
+      );
+      return;
+    }
+
+    const baseData = {
+      resident_name: `${profile.first_name} ${profile.last_name}`,
+      room_number: profile.room_number,
+      request_type: selectedRequest,
+      status: 'Pending',
     };
-  }
 
-  try {
-    await apiClient.post('/transportation/', requestData);
-    await sendImmediateNotification(
-      'Transportation Request Submitted',
-      'Your request is being processed.'
-    );
-    Alert.alert('Success', 'Your transportation request has been submitted.');
-    await loadRequests();
-    resetForm();
-
-      } catch {
-        Alert.alert('Error', 'Something went wrong submitting your request.');
+    let requestData;
+    if (selectedRequest === 'Medical') {
+      if (!isRequired(doctorName)) {
+        Alert.alert('Missing Info', 'Doctor Name is required.');
+        return;
       }
-    };
+      if (!isLength(doctorName, 2, 100)) {
+        Alert.alert('Invalid Doctor Name', 'Doctor name must be 2-100 characters.');
+        return;
+      }
+      requestData = {
+        ...baseData,
+        doctor_name: sanitize(doctorName),
+        appointment_time: appointmentTime,
+        address: address ? sanitize(address) : '',
+      };
+    } else {
+      if (!isRequired(destinationName)) {
+        Alert.alert('Missing Info', 'Destination Name is required.');
+        return;
+      }
+      if (!isLength(destinationName, 2, 100)) {
+        Alert.alert('Invalid Destination Name', 'Destination must be 2-100 characters.');
+        return;
+      }
+      requestData = {
+        ...baseData,
+        destination_name: sanitize(destinationName),
+        pickup_time: pickupTime,
+        address: address ? sanitize(address) : '',
+      };
+    }
+
+    try {
+      await apiClient.post('/transportation/', requestData);
+      await sendImmediateNotification(
+        'Transportation Request Submitted',
+        'Your request is being processed.'
+      );
+      Alert.alert('Success', 'Your transportation request has been submitted.');
+      await loadRequests();
+      resetForm();
+    } catch {
+      Alert.alert('Error', 'Something went wrong submitting your request.');
+    }
+  };
 
   const handleCancel = async (id: number) => {
     try {
